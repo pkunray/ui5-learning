@@ -1,0 +1,196 @@
+<!--
+    ============================================================================
+    AddToCartDialog.fragment.xml
+    Namespace: com.shopeasy.app.fragment
+    ============================================================================
+
+    [BEGINNER] DIALOGS IN FRAGMENTS
+    Dialogs are one of the most common use cases for fragments. Instead of
+    defining a Dialog inline inside a view (which clutters the view's XML),
+    you extract it into its own fragment file. This keeps views lean and lets
+    you reuse the same dialog from multiple views.
+
+    [INTERMEDIATE] DIALOG LIFECYCLE — OPEN / CLOSE / DESTROY
+    When using a Dialog fragment, the typical lifecycle is:
+
+      1. LOAD the fragment (once, then cache the reference):
+         if (!this._oAddToCartDialog) {
+             Fragment.load({
+                 id: this.getView().getId(),
+                 name: "com.shopeasy.app.fragment.AddToCartDialog",
+                 controller: this
+             }).then(function(oDialog) {
+                 this._oAddToCartDialog = oDialog;
+                 this.getView().addDependent(oDialog);  // important!
+                 oDialog.open();
+             }.bind(this));
+         } else {
+             this._oAddToCartDialog.open();
+         }
+
+      2. CLOSE the dialog (but keep it alive for reuse):
+         this._oAddToCartDialog.close();
+
+      3. DESTROY the dialog when the view is destroyed to prevent memory leaks:
+         onExit: function() {
+             if (this._oAddToCartDialog) {
+                 this._oAddToCartDialog.destroy();
+             }
+         }
+
+    [INTERMEDIATE] addDependent()
+    Calling this.getView().addDependent(oDialog) ensures the Dialog
+    participates in the view's model propagation and lifecycle. Without it,
+    data bindings inside the dialog would not resolve because the Dialog
+    renders in a separate DOM area (the static area) outside the view's tree.
+
+    [ADVANCED] EXPRESSION BINDING FOR CALCULATED VALUES
+    Expression bindings {= ... } let you compute values directly in XML
+    without a formatter function. Below we calculate the subtotal as
+    quantity * price. Expression bindings are re-evaluated whenever any
+    referenced property changes, so the subtotal updates live as the user
+    adjusts the quantity.
+
+    Syntax: {= ${path/to/property} * ${path/to/other} }
+    The $ prefix inside {= } dereferences a model property.
+
+    [BEST PRACTICE] For complex calculations or formatting that goes beyond
+    simple arithmetic, use a proper formatter function instead of expression
+    bindings. Expression bindings are great for one-liners but become
+    unreadable for anything more involved.
+    ============================================================================
+-->
+<core:FragmentDefinition
+    xmlns:core="sap.ui.core"
+    xmlns="sap.m">
+
+    <Dialog
+        title="Add to Cart"
+        contentWidth="24rem"
+        draggable="true"
+        resizable="false">
+
+        <!--
+            [BEGINNER] The Dialog control creates a modal overlay. Setting
+            draggable="true" lets the user reposition it. The title appears
+            in the dialog header bar.
+        -->
+
+        <content>
+            <VBox class="sapUiSmallMargin">
+
+                <!-- Product information header (compact) -->
+                <ObjectHeader
+                    title="{Name}"
+                    number="{
+                        path: 'Price',
+                        type: 'sap.ui.model.type.Currency',
+                        formatOptions: { showMeasure: false }
+                    }"
+                    numberUnit="{CurrencyCode}"
+                    condensed="true"
+                    backgroundDesign="Transparent"
+                    class="sapUiTinyMarginBottom" />
+
+                <!--
+                    [INTERMEDIATE] ObjectHeader in condensed mode is ideal
+                    for compact summaries inside dialogs. backgroundDesign=
+                    "Transparent" blends it with the dialog background.
+                -->
+
+                <!-- Quantity selection -->
+                <Label
+                    text="Quantity"
+                    labelFor="idQuantityInput" />
+
+                <StepInput
+                    id="idQuantityInput"
+                    value="{addToCart>/quantity}"
+                    min="1"
+                    max="99"
+                    step="1"
+                    width="100%"
+                    class="sapUiTinyMarginBottom" />
+
+                <!--
+                    [INTERMEDIATE] We bind the StepInput to a separate local
+                    model "addToCart" rather than the product model. This keeps
+                    the dialog's transient state (selected quantity) isolated
+                    from the product data. The controller creates this model
+                    when opening the dialog:
+
+                        this.getView().setModel(
+                            new JSONModel({ quantity: 1 }),
+                            "addToCart"
+                        );
+                -->
+
+                <!-- Subtotal (expression binding: quantity * price) -->
+                <HBox
+                    alignItems="Center"
+                    justifyContent="SpaceBetween"
+                    class="sapUiSmallMarginTop">
+
+                    <Label text="Subtotal" />
+
+                    <ObjectNumber
+                        number="{= ${addToCart>/quantity} * ${Price} }"
+                        unit="{CurrencyCode}"
+                        emphasized="true" />
+
+                    <!--
+                        [ADVANCED] EXPRESSION BINDING BREAKDOWN
+                        {= ${addToCart>/quantity} * ${Price} }
+                           ^                        ^
+                           |                        |
+                           Quantity from the        Price from the
+                           "addToCart" JSONModel     default (unnamed) model
+
+                        The framework watches both properties and recalculates
+                        the result whenever either changes. Because StepInput
+                        uses two-way binding, changing the spinner immediately
+                        updates the subtotal.
+                    -->
+
+                </HBox>
+
+            </VBox>
+        </content>
+
+        <!--
+            [BEGINNER] beginButton and endButton are the two footer button
+            slots of a Dialog. By convention:
+              - beginButton = primary/confirm action (left in LTR languages)
+              - endButton   = cancel/dismiss action (right in LTR languages)
+        -->
+
+        <beginButton>
+            <Button
+                text="Add to Cart"
+                type="Emphasized"
+                press=".onConfirmAddToCart" />
+        </beginButton>
+
+        <!--
+            [BEST PRACTICE] Use type="Emphasized" for the primary action so
+            it visually stands out. There should be at most one Emphasized
+            button per dialog (Fiori Design Guidelines).
+        -->
+
+        <endButton>
+            <Button
+                text="Cancel"
+                type="Transparent"
+                press=".onCancelAddToCart" />
+        </endButton>
+
+        <!--
+            [INTERMEDIATE] The ".onCancelAddToCart" handler in the controller
+            should call this._oAddToCartDialog.close(). Do NOT call destroy()
+            here — close merely hides the dialog so it can be reopened without
+            reloading the fragment.
+        -->
+
+    </Dialog>
+
+</core:FragmentDefinition>

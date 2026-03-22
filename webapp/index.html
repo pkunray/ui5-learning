@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<!--
+=============================================================================
+  FILE: index.html
+  PROJECT: ShopEasy - SAP UI5 Online Shopping Application
+  NAMESPACE: com.shopeasy.app
+=============================================================================
+
+  [BEGINNER] WHAT IS THIS FILE?
+  ─────────────────────────────
+  This is the ENTRY POINT of your entire SAP UI5 application. When a user
+  opens your app in a browser, THIS is the first file the browser loads.
+  Think of it like the "front door" of your application.
+
+  In a React app, this would be similar to your public/index.html file.
+  In Angular, it's the src/index.html file.
+  The concept is the same: a minimal HTML page that loads the framework
+  and tells it where to render.
+
+  [BEGINNER] WHAT IS "BOOTSTRAPPING"?
+  ────────────────────────────────────
+  "Bootstrapping" is a fancy word for "starting up" or "initializing" the
+  framework. When we say "bootstrap UI5", we mean:
+    1. Load the UI5 core library from a CDN (Content Delivery Network)
+    2. Configure how UI5 should behave (theme, modules, paths, etc.)
+    3. Tell UI5 what to do once it's ready (load our app component)
+
+  It's like turning the key in a car's ignition — the engine (UI5) starts,
+  the dashboard lights up (configuration), and you're ready to drive (run
+  your app).
+
+  [BEGINNER] WHY IS THIS FILE SO SMALL?
+  ──────────────────────────────────────
+  Unlike traditional web pages where you write lots of HTML, a UI5 app
+  generates its entire UI dynamically using JavaScript. This HTML file
+  only has TWO jobs:
+    1. Load UI5 (the <script> tag)
+    2. Provide a placeholder <div> where UI5 will render the app
+
+  Everything else — buttons, pages, lists, navigation — is defined in
+  XML Views and JS Controllers, NOT in this HTML file.
+-->
+<html>
+<head>
+    <!--
+      [BEGINNER] META CHARSET
+      ───────────────────────
+      This tells the browser to use UTF-8 character encoding, which supports
+      virtually all characters from all languages. Always include this as the
+      first element in <head>.
+
+      [BEST PRACTICE] Always declare charset as the very first thing in <head>,
+      before any other elements. This prevents character encoding issues.
+    -->
+    <meta charset="utf-8">
+
+    <!--
+      [BEGINNER] META VIEWPORT
+      ────────────────────────
+      This makes the app responsive on mobile devices. Without this, mobile
+      browsers would render the page at a desktop width and then shrink it
+      down, making everything tiny and unreadable.
+
+      - width=device-width: Match the screen width of the device
+      - initial-scale=1.0: Don't zoom in or out by default
+
+      [BEST PRACTICE] Always include viewport meta for responsive UI5 apps.
+      UI5's sap.m library is designed for mobile-first, and this meta tag
+      ensures the responsive behavior works correctly.
+    -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>ShopEasy - Your Online Shopping Destination</title>
+
+    <!--
+    =======================================================================
+      THE UI5 BOOTSTRAP SCRIPT — THE MOST IMPORTANT PART OF THIS FILE
+    =======================================================================
+
+      [BEGINNER] WHAT IS A CDN?
+      ─────────────────────────
+      CDN stands for "Content Delivery Network". It's a network of servers
+      around the world that host popular libraries. Instead of downloading
+      UI5 and including it in our project, we load it directly from SAP's
+      CDN. Benefits:
+        - No need to manage UI5 files yourself
+        - The browser may already have it cached from another UI5 app
+        - SAP keeps it updated and optimized
+
+      [INTERMEDIATE] OpenUI5 vs SAPUI5
+      ─────────────────────────────────
+      - OpenUI5: The open-source version (what we use here). Free for everyone.
+        URL: https://openui5.hana.ondemand.com/
+      - SAPUI5: The full SAP version with extra controls (smart controls,
+        Fiori elements, etc.). Requires an SAP license.
+        URL: https://sapui5.hana.ondemand.com/
+
+      Both share the same core. If you learn OpenUI5, you know SAPUI5.
+
+      [ADVANCED] BOOTSTRAP ARCHITECTURE
+      ──────────────────────────────────
+      When sap-ui-core.js loads, it does the following in order:
+        1. Sets up the module loading system (similar to RequireJS/AMD)
+        2. Reads all data-sap-ui-* attributes from the script tag
+        3. Loads required core modules
+        4. Applies the theme CSS
+        5. Executes the oninit module/function
+      This entire process is asynchronous when data-sap-ui-async="true".
+
+      ═══════════════════════════════════════════════════════════════════
+      BOOTSTRAP ATTRIBUTE REFERENCE (each data-sap-ui-* explained below)
+      ═══════════════════════════════════════════════════════════════════
+
+      ATTRIBUTE: data-sap-ui-theme="sap_horizon"
+      ────────────────────────────────────────────
+      [BEGINNER] Sets the visual appearance (colors, fonts, spacing) of ALL
+      UI5 controls. Available themes include:
+        - "sap_horizon"       — The NEWEST theme (2021+). Modern, clean,
+                                 rounded corners. RECOMMENDED for new apps.
+        - "sap_fiori_3"       — The previous standard Fiori 3 theme.
+        - "sap_fiori_3_dark"  — Dark mode version of Fiori 3.
+        - "sap_belize"        — Older Belize theme (2016-era).
+        - "sap_bluecrystal"   — Legacy theme, do NOT use for new apps.
+
+      [BEST PRACTICE] Use "sap_horizon" for all new development. It's
+      SAP's current design language and aligns with the latest Fiori
+      design guidelines.
+
+      [GOTCHA] Changing the theme doesn't just swap colors — it can
+      change spacing, sizing, and even control behavior. Always test
+      your app when switching themes!
+
+
+      ATTRIBUTE: data-sap-ui-resourceroots='{ "com.shopeasy.app": "./" }'
+      ────────────────────────────────────────────────────────────────────
+      [BEGINNER] This is one of the MOST IMPORTANT configuration attributes.
+      It tells UI5: "When you see a module path starting with
+      'com.shopeasy.app', look for the actual files starting from './'
+      (the same directory as this HTML file)."
+
+      Think of it as an alias or shortcut:
+        com.shopeasy.app.Component  →  ./Component.js
+        com.shopeasy.app.view.App   →  ./view/App.view.xml
+        com.shopeasy.app.model.cart →  ./model/cart.json
+
+      [INTERMEDIATE] WHY USE DOTS IN NAMESPACE?
+      SAP follows Java-style reverse-domain naming convention:
+        com.shopeasy.app
+        ↑       ↑     ↑
+        |       |     └── project/app name
+        |       └── company/organization name
+        └── top-level domain reversed
+
+      When resolving files, dots become folder separators:
+        com.shopeasy.app.view.App → com/shopeasy/app/view/App
+      BUT because we mapped "com.shopeasy.app" to "./", it becomes:
+        ./view/App
+
+      [GOTCHA] The value MUST be valid JSON (note the single quotes
+      around the attribute value and double quotes inside). Getting
+      this wrong is one of the most common beginner mistakes, leading
+      to "module not found" errors.
+
+      [ANTI-PATTERN] Don't use relative paths like "../" in resourceroots.
+      Keep your namespace mapping clean and simple.
+
+
+      ATTRIBUTE: data-sap-ui-compatVersion="edge"
+      ─────────────────────────────────────────────
+      [INTERMEDIATE] Tells UI5 which version's behavior to use.
+      - "edge": Always use the LATEST behavior. Recommended for new apps.
+      - "1.120": Lock to a specific version's behavior.
+
+      [BEST PRACTICE] Use "edge" for new projects. It ensures you get
+      the latest improvements and fixes. Only pin to a specific version
+      if you have a legacy app that depends on older behavior.
+
+      [ADVANCED] What does "compatibility" actually control?
+      It affects things like:
+        - How date/time formatting works
+        - Default values for certain control properties
+        - Deprecated API behavior
+
+
+      ATTRIBUTE: data-sap-ui-async="true"
+      ────────────────────────────────────
+      [BEGINNER] This is CRITICAL for performance. When set to "true", UI5
+      loads all modules and resources asynchronously (in parallel, without
+      blocking the browser).
+
+      Without async (synchronous loading):
+        Load Module A → wait → Load Module B → wait → Load Module C → DONE
+        Total: very slow, browser freezes during loading
+
+      With async (asynchronous loading):
+        Load Module A ─┐
+        Load Module B ─┼→ DONE (much faster!)
+        Load Module C ─┘
+
+      [BEST PRACTICE] ALWAYS set this to "true". There is no good reason
+      to use synchronous loading in modern UI5 development.
+
+      [ANTI-PATTERN] Setting async="false" or omitting it. This causes:
+        - Slower page loads
+        - Browser freeze during loading
+        - Console warnings from UI5
+        - Potential issues with Content Security Policy (CSP)
+
+      [GOTCHA] When async is true, you MUST use the AMD-style
+      sap.ui.define() and sap.ui.require() for module loading.
+      Old-style jQuery.sap.require() will NOT work properly.
+
+
+      ATTRIBUTE: data-sap-ui-oninit="module:sap/ui/core/ComponentSupport"
+      ────────────────────────────────────────────────────────────────────
+      [BEGINNER] This tells UI5: "Once you're fully loaded and initialized,
+      run this module." It's like an event handler for "UI5 is ready!"
+
+      "module:sap/ui/core/ComponentSupport" is a special UI5 module that:
+        1. Scans the HTML page for elements with data-sap-ui-component
+        2. Creates a ComponentContainer for each one
+        3. Loads and instantiates the Component specified by data-name
+        4. Renders the component into that element
+
+      [INTERMEDIATE] ALTERNATIVE APPROACHES
+      Instead of ComponentSupport, you could manually bootstrap:
+        data-sap-ui-oninit="module:com/shopeasy/app/init"
+      Then in init.js:
+        sap.ui.require(["sap/ui/core/ComponentContainer"], function(CC) {
+          new CC({ name: "com.shopeasy.app" }).placeAt("content");
+        });
+      But the ComponentSupport approach is cleaner and declarative.
+
+      [BEST PRACTICE] Use ComponentSupport for standard apps. It's the
+      recommended pattern since UI5 1.58+ and keeps your index.html
+      free of JavaScript code.
+
+      [ADVANCED] The "module:" prefix tells UI5 to load this as an
+      AMD module rather than executing it as inline JavaScript.
+      Without the prefix, the value would be treated as a JS expression
+      to evaluate — which is an older, deprecated pattern.
+
+
+      [GOTCHA] COMMON BOOTSTRAP MISTAKES
+      ───────────────────────────────────
+      1. Missing the closing ">" of the script tag — easy to miss with
+         so many attributes!
+      2. Typo in the CDN URL — the app will show a blank page with no
+         helpful error message.
+      3. Wrong resourceroots JSON syntax — remember: single quotes outside,
+         double quotes inside.
+      4. Forgetting data-sap-ui-async="true" — app works but performs badly.
+      5. Using the wrong namespace in resourceroots vs. manifest.json —
+         they MUST match exactly.
+    -->
+    <script
+        id="sap-ui-bootstrap"
+        src="resources/sap-ui-core.js"
+        data-sap-ui-theme="sap_horizon"
+        data-sap-ui-resourceroots='{ "com.shopeasy.app": "./" }'
+        data-sap-ui-compatVersion="edge"
+        data-sap-ui-async="true"
+        data-sap-ui-oninit="module:sap/ui/core/ComponentSupport"
+    ></script>
+</head>
+
+<body class="sapUiBody" id="content">
+    <!--
+      [BEGINNER] THE BODY ELEMENT
+      ───────────────────────────
+      - class="sapUiBody": A CSS class provided by UI5 that applies base
+        styles (font, background color, margin removal, etc.) to the page.
+        Without this, you might see unstyled margins or wrong fonts.
+
+      - id="content": An identifier for the body element. While not strictly
+        required with ComponentSupport, it's good practice to have an ID
+        on the body for potential manual component placement.
+
+      [GOTCHA] Don't forget class="sapUiBody"! Without it, your app will
+      have a white background with default browser margins, looking broken
+      even though all your code is correct.
+    -->
+
+    <!--
+      ═══════════════════════════════════════════════════════════════════
+        THE COMPONENT CONTAINER DIV — Where Your App Renders
+      ═══════════════════════════════════════════════════════════════════
+
+      [BEGINNER] This <div> is where your ENTIRE UI5 application will be
+      rendered. The ComponentSupport module (loaded via data-sap-ui-oninit)
+      finds this div and processes it. Let's break down each attribute:
+
+      data-sap-ui-component (no value)
+      ─────────────────────────────────
+        This is a MARKER attribute (no value needed). It tells
+        ComponentSupport: "Hey, I'm a component placeholder! Process me!"
+        ComponentSupport scans the DOM for ALL elements with this attribute.
+
+      data-name="com.shopeasy.app"
+      ─────────────────────────────
+        The fully qualified name of the UI5 Component to load. UI5 will:
+          1. Use the resourceroots mapping to find the Component.js file
+          2. com.shopeasy.app → ./ → loads ./Component.js
+          3. Instantiate the component and render it into this div
+
+        [GOTCHA] This MUST match EXACTLY:
+          - The namespace in data-sap-ui-resourceroots (above)
+          - The "sap.app".id in manifest.json
+          - The namespace used in Component.js
+
+      data-id="container"
+      ────────────────────
+        The DOM id for the ComponentContainer that UI5 creates. This is
+        NOT the same as the component's id. It's the wrapper element's id.
+
+      data-settings='{"id":"shopeasy"}'
+      ──────────────────────────────────
+        Additional settings passed to the Component constructor. Here we
+        set the Component's id to "shopeasy". This means:
+          - The component instance will have id "shopeasy"
+          - All controls inside will have ids prefixed with "shopeasy--"
+          - Example: a button with id "myBtn" becomes "shopeasy--myBtn"
+
+        [INTERMEDIATE] This prefixing mechanism prevents ID collisions
+        when multiple components exist on the same page (common in SAP
+        Fiori Launchpad where multiple apps can be loaded simultaneously).
+
+        [GOTCHA] The settings value MUST be valid JSON with the same
+        quoting rules: single quotes for the HTML attribute, double
+        quotes inside the JSON.
+
+      [ADVANCED] WHAT HAPPENS BEHIND THE SCENES
+      ──────────────────────────────────────────
+      When ComponentSupport processes this div, it essentially does:
+
+        1. Reads all data-* attributes
+        2. Creates a new sap.ui.core.ComponentContainer({
+             name: "com.shopeasy.app",
+             id: "container",
+             settings: { id: "shopeasy" },
+             async: true
+           })
+        3. Calls .placeAt() to render it into this div's position
+        4. The ComponentContainer then loads Component.js
+        5. Component.js loads manifest.json
+        6. manifest.json tells UI5 which view to show (rootView)
+        7. The rootView renders, and you finally see your app!
+
+      This entire chain happens automatically — you just define this one div.
+    -->
+    <div
+        data-sap-ui-component
+        data-name="com.shopeasy.app"
+        data-id="container"
+        data-settings='{"id":"shopeasy"}'
+    ></div>
+
+    <!--
+      [BEGINNER] SUMMARY: THE COMPLETE LOADING SEQUENCE
+      ──────────────────────────────────────────────────
+      Here's what happens when a user opens your app, step by step:
+
+      1.  Browser loads index.html
+      2.  Browser encounters the <script> tag and downloads sap-ui-core.js
+      3.  UI5 core initializes and reads all data-sap-ui-* attributes
+      4.  UI5 applies the "sap_horizon" theme (loads theme CSS)
+      5.  UI5 registers the resource root (com.shopeasy.app → ./)
+      6.  UI5 finishes init and runs ComponentSupport (data-sap-ui-oninit)
+      7.  ComponentSupport finds the div with data-sap-ui-component
+      8.  ComponentSupport creates a ComponentContainer
+      9.  ComponentContainer loads ./Component.js
+      10. Component.js says manifest: "json" → loads ./manifest.json
+      11. manifest.json defines rootView → loads ./view/App.view.xml
+      12. App view renders inside the Component
+      13. Router initializes and matches the URL to a route
+      14. The matched route's target view loads and renders
+      15. The user sees the app!
+
+      Total time: typically 1-3 seconds on a good connection.
+    -->
+</body>
+</html>

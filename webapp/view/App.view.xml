@@ -1,0 +1,193 @@
+<!--
+========================================================================
+FILE: App.view.xml — The Root View of the ShopEasy Application
+NAMESPACE: com.shopeasy.app.view
+========================================================================
+
+[BEGINNER] WHAT IS AN XML VIEW?
+An XML view is a declarative way to define your user interface in SAP UI5.
+Instead of writing JavaScript code to create buttons, lists, and pages,
+you describe them in XML — much like writing HTML.
+
+Think of it like this:
+  HTML:  <div class="container"><button>Click</button></div>
+  UI5:   <Page><Button text="Click" /></Page>
+
+The XML is parsed by the UI5 runtime and converted into JavaScript
+control objects internally. You NEVER manipulate the XML at runtime —
+it's a one-time blueprint.
+
+[BEGINNER] WHY XML AND NOT JAVASCRIPT?
+UI5 supports 4 view types: XML, JavaScript, JSON, and HTML.
+XML is the RECOMMENDED and STANDARD choice because:
+  1. It separates structure (XML view) from logic (JS controller)
+  2. UI5 tooling (code completion, linting) works best with XML
+  3. SAP Fiori guidelines mandate XML views
+  4. XML views enable declarative data binding (we'll see examples below)
+  5. Easier to read and review in code reviews
+
+[BEGINNER] HOW DOES THIS VIEW CONNECT TO A CONTROLLER?
+The controllerName attribute on the <mvc:View> tag tells UI5 which
+JavaScript controller file to pair with this view. UI5 loads the
+controller, creates an instance, and calls its lifecycle methods
+(onInit, onBeforeRendering, onAfterRendering, onExit).
+
+  controllerName="com.shopeasy.app.controller.App"
+    → Resolves to: webapp/controller/App.controller.js
+
+The view and controller communicate through:
+  - this.getView()   — Controller accesses its view
+  - this.getController() — View accesses its controller (rarely needed in XML)
+
+[INTERMEDIATE] HOW DOES THIS VIEW GET LOADED?
+This view is declared as the "rootView" in manifest.json:
+  "rootView": {
+    "viewName": "com.shopeasy.app.view.App",
+    "type": "XML",
+    "id": "app",
+    "async": true
+  }
+When the Component initializes, it loads this root view first. All other
+views are then rendered INSIDE this view via the Router.
+
+[ADVANCED] VIEW LIFECYCLE:
+  1. UI5 parses this XML file
+  2. For each XML element, UI5 creates the corresponding JS control
+  3. Data bindings are resolved and connected to models
+  4. The controller's onInit() is called
+  5. onBeforeRendering() is called
+  6. Controls render themselves into the DOM
+  7. onAfterRendering() is called
+  8. When navigating away: onExit() is called for cleanup
+
+Learn more: docs/02-views-and-controllers.md
+========================================================================
+-->
+
+<!--
+[BEGINNER] THE <mvc:View> ROOT ELEMENT
+Every XML view MUST have <mvc:View> as its root element. This tells UI5
+"this XML file is a View" and provides the container for all controls.
+
+Attributes explained:
+  - controllerName:  The fully-qualified name of the paired controller
+  - xmlns:           The DEFAULT XML namespace — controls from this library
+                     don't need a prefix (e.g., <App>, <Page>, <Button>)
+  - xmlns:mvc:       The namespace for the View control itself
+  - xmlns:core:      Namespace for core controls (e.g., core:Fragment)
+
+[BEGINNER] UNDERSTANDING XML NAMESPACES (xmlns)
+Namespaces prevent name collisions. UI5 has MANY libraries, and different
+libraries might have controls with the same name. Namespaces solve this:
+
+  xmlns="sap.m"           → Default. <Button> means sap.m.Button
+  xmlns:core="sap.ui.core" → <core:Icon> means sap.ui.core.Icon
+  xmlns:l="sap.ui.layout" → <l:Grid> means sap.ui.layout.Grid
+
+The default namespace (xmlns without a prefix) is the one you use MOST.
+Since sap.m contains the majority of controls you'll use (Button, Page,
+List, Input, etc.), it's almost always the default.
+
+[BEST PRACTICE] Always use these standard prefix conventions:
+  xmlns="sap.m"                    (default — no prefix needed)
+  xmlns:mvc="sap.ui.core.mvc"     (always "mvc" for the View)
+  xmlns:core="sap.ui.core"        (always "core" for core controls)
+  xmlns:l="sap.ui.layout"         (always "l" for layout controls)
+  xmlns:f="sap.f"                 (always "f" for Fiori controls)
+  xmlns:unified="sap.ui.unified"  (always "unified" for unified controls)
+
+Using consistent prefixes across your project makes the codebase
+predictable and easier for your team to navigate.
+
+[INTERMEDIATE] NAMESPACE RESOLUTION AT RUNTIME
+When UI5 parses <Button text="Hello" />, it:
+  1. Sees no prefix → uses the default namespace "sap.m"
+  2. Resolves to the class sap.m.Button
+  3. Loads the module "sap/m/Button" (if not already loaded)
+  4. Creates: new sap.m.Button({ text: "Hello" })
+
+When it sees <core:Icon src="sap-icon://home" />, it:
+  1. Sees prefix "core" → uses namespace "sap.ui.core"
+  2. Resolves to sap.ui.core.Icon
+  3. Creates: new sap.ui.core.Icon({ src: "sap-icon://home" })
+-->
+<mvc:View
+    controllerName="com.shopeasy.app.controller.App"
+    xmlns="sap.m"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns:core="sap.ui.core"
+>
+    <!--
+    [BEGINNER] THE <App> CONTROL — Navigation Container
+    ====================================================
+    sap.m.App is the ROOT CONTROL for mobile-style (responsive) applications.
+    It serves as a NavContainer — a container that holds pages and handles
+    animated transitions between them when navigating.
+
+    Think of App like a deck of cards:
+      - Only ONE card (page) is visible at a time
+      - When you navigate, a new card slides in from the right
+      - When you go back, the previous card slides in from the left
+
+    id="app"
+      This ID is CRITICAL because it's referenced in the routing config
+      (manifest.json → sap.ui5.routing.config.controlId: "app").
+      The Router uses this ID to find the container where it should
+      render target views.
+
+    [INTERMEDIATE] HOW ROUTING USES THIS APP CONTROL
+    The manifest.json routing config specifies:
+      controlId: "app"              → Find the control with id="app"
+      controlAggregation: "pages"   → Put views into its "pages" aggregation
+
+    When a route matches (e.g., user navigates to #/cart):
+      1. Router finds this <App id="app"> control
+      2. Creates/retrieves the Cart view
+      3. Adds it to the "pages" aggregation
+      4. Calls app.to(cartPage) to animate the transition
+
+    [ADVANCED] sap.m.App vs sap.m.NavContainer vs sap.m.SplitApp
+      - sap.m.App: Extends NavContainer, adds viewport meta tag handling
+        and platform-specific styling. Use this as your outermost container.
+      - sap.m.NavContainer: Pure navigation container without App-specific
+        features. Use inside App for nested navigation.
+      - sap.m.SplitApp: Two-column layout (master/detail) for tablet/desktop.
+        Use for apps with a persistent side panel (like email clients).
+
+    [BEST PRACTICE] BUSY INDICATOR SUPPORT
+    The busy and busyIndicatorDelay attributes enable a loading overlay
+    on the entire app. This is useful during initial data loading:
+      busy="{appView>/busy}"                → Shows spinner when true
+      busyIndicatorDelay="{appView>/delay}" → Delay before showing (ms)
+
+    Why a delay? To avoid flickering for fast operations. If data loads
+    in 100ms, you don't want a spinner to flash for 100ms — it looks
+    broken. A delay of 300-500ms means the spinner only shows for
+    operations that take noticeably long.
+    -->
+    <App id="app">
+        <!--
+        [INTERMEDIATE] WHY IS THE <App> CONTROL EMPTY?
+        ===============================================
+        You might expect to see <pages> with views listed here, but the
+        App control starts EMPTY. The Router dynamically adds pages at
+        runtime based on the URL hash:
+
+          URL: #/           → Router adds Home.view.xml to pages
+          URL: #/cart       → Router adds Cart.view.xml to pages
+          URL: #/product/1  → Router adds ProductDetail.view.xml to pages
+
+        This is the power of routing — views are loaded ON DEMAND, not
+        all at once. This improves initial load time because the app
+        only loads the view the user actually needs.
+
+        [ADVANCED] LAZY LOADING VIEWS
+        By default, views are created when their route is first matched
+        and then cached. On subsequent navigations to the same route,
+        the cached view instance is reused (no re-creation). This is
+        why onInit() runs only ONCE per view, but the route's
+        patternMatched event fires on EVERY navigation.
+        -->
+    </App>
+
+</mvc:View>

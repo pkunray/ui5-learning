@@ -1,0 +1,750 @@
+{
+    "_comment_file_overview": [
+        "=============================================================================",
+        "  FILE: manifest.json (also called the 'App Descriptor')",
+        "  PROJECT: ShopEasy - SAP UI5 Online Shopping Application",
+        "  NAMESPACE: com.shopeasy.app",
+        "=============================================================================",
+        "",
+        "[BEGINNER] WHAT IS manifest.json?",
+        "This is the APPLICATION DESCRIPTOR — the single most important configuration",
+        "file in any UI5 application. It describes EVERYTHING about your app:",
+        "  - What it's called and what it does",
+        "  - What data sources it connects to",
+        "  - What libraries it needs",
+        "  - What models (data containers) it uses",
+        "  - How navigation/routing works",
+        "  - What the first screen (root view) is",
+        "",
+        "Think of it as your app's 'resume' or 'passport' — it tells the UI5 runtime",
+        "and the SAP Fiori Launchpad everything they need to know about your app",
+        "WITHOUT having to look at any code.",
+        "",
+        "[INTERMEDIATE] WHY NOT JUST CONFIGURE IN JAVASCRIPT?",
+        "Before manifest.json (introduced in UI5 1.30), all configuration was done",
+        "in Component.js using the 'metadata' property. The manifest.json approach",
+        "is better because:",
+        "  1. It's declarative (describe WHAT, not HOW)",
+        "  2. It can be read without executing JavaScript (better for tooling)",
+        "  3. The SAP Fiori Launchpad can read it to show app tiles without loading the app",
+        "  4. It separates configuration from logic (clean architecture)",
+        "",
+        "[ADVANCED] THE THREE MAIN NAMESPACES",
+        "manifest.json is divided into three major sections (namespaces):",
+        "  - sap.app:  Application-level metadata (id, version, data sources)",
+        "  - sap.ui:   UI technology metadata (which UI framework, device support)",
+        "  - sap.ui5:  UI5-specific configuration (models, routing, dependencies)",
+        "",
+        "[GOTCHA] JSON DOES NOT SUPPORT COMMENTS!",
+        "That's why we use '_comment' fields throughout this file. These are ignored",
+        "by UI5 at runtime. In production, you might remove them to reduce file size.",
+        "Some teams use JSON5 or JSONC during development and strip comments in the build."
+    ],
+
+    "_version": "1.65.0",
+    "_comment_version": [
+        "[INTERMEDIATE] _version indicates the manifest.json schema version.",
+        "This tells UI5 which manifest features are available.",
+        "Version 1.65.0 corresponds to UI5 1.65. Higher versions unlock",
+        "newer manifest features (like flexible column layout configs).",
+        "If you use a feature from a newer version but declare an older",
+        "_version, it will be silently ignored."
+    ],
+
+    "sap.app": {
+        "_comment_sap_app": [
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            "  sap.app — APPLICATION-LEVEL METADATA",
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            "",
+            "[BEGINNER] This section describes your application's identity.",
+            "It answers: WHO is this app? WHAT does it do? WHERE does it get data?",
+            "",
+            "If your app were a person, sap.app would be their ID card:",
+            "  - id = their unique name",
+            "  - type = their job title",
+            "  - title = their display name",
+            "  - dataSources = where they get their information"
+        ],
+
+        "id": "com.shopeasy.app",
+        "_comment_id": [
+            "[BEGINNER] The UNIQUE IDENTIFIER for your application.",
+            "This MUST match:",
+            "  1. The namespace in index.html's data-sap-ui-resourceroots",
+            "  2. The data-name attribute on the component div in index.html",
+            "  3. The namespace used in your Component.js, views, and controllers",
+            "",
+            "[BEST PRACTICE] Use reverse-domain notation: com.companyname.appname",
+            "This ensures global uniqueness, especially important on SAP BTP",
+            "(Business Technology Platform) where multiple apps coexist.",
+            "",
+            "[ANTI-PATTERN] Don't use short ids like 'myapp' or 'shop'.",
+            "They'll collide with other apps in a Fiori Launchpad environment."
+        ],
+
+        "type": "application",
+        "_comment_type": [
+            "[BEGINNER] The type of this project. Values include:",
+            "  - 'application': A standalone app (what we're building)",
+            "  - 'component': A reusable component (embedded in other apps)",
+            "  - 'library': A UI5 control library",
+            "  - 'card': A UI Integration Card",
+            "",
+            "For 99% of projects, you'll use 'application'."
+        ],
+
+        "title": "ShopEasy - Online Shopping",
+        "_comment_title": [
+            "[BEGINNER] The human-readable name of your app.",
+            "This is displayed in the Fiori Launchpad tile, browser tab,",
+            "and app info dialogs.",
+            "",
+            "[BEST PRACTICE] In production, use i18n (internationalization):",
+            "  'title': '{{appTitle}}'",
+            "This references a key in your i18n.properties file, allowing",
+            "translation to different languages."
+        ],
+
+        "description": "A comprehensive online shopping application for learning SAP UI5 concepts",
+        "_comment_description": [
+            "[BEGINNER] A longer description of what the app does.",
+            "Shown in app info and the Fiori Launchpad app finder.",
+            "Like title, this should use i18n in production: '{{appDescription}}'"
+        ],
+
+        "applicationVersion": {
+            "version": "1.0.0"
+        },
+        "_comment_applicationVersion": [
+            "[BEGINNER] Your app's version number following Semantic Versioning:",
+            "  MAJOR.MINOR.PATCH → 1.0.0",
+            "  - MAJOR: Breaking changes (1.0.0 → 2.0.0)",
+            "  - MINOR: New features, backward compatible (1.0.0 → 1.1.0)",
+            "  - PATCH: Bug fixes (1.0.0 → 1.0.1)",
+            "",
+            "[INTERMEDIATE] This version is independent of the UI5 framework version.",
+            "It tracks YOUR app's evolution. Update it with each release."
+        ],
+
+        "dataSources": {
+            "_comment_dataSources": [
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                "  DATA SOURCES — Where Your App Gets Its Data",
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                "",
+                "[BEGINNER] dataSources define the backend services your app talks to.",
+                "Think of them as 'registered connections' to servers that provide data.",
+                "",
+                "Each data source has:",
+                "  - A key (name you choose, like 'mainService')",
+                "  - A uri (the URL path to the service)",
+                "  - A type (OData, JSON, XML, etc.)",
+                "  - Settings (version, local mock data path, etc.)",
+                "",
+                "[INTERMEDIATE] WHY DEFINE DATA SOURCES HERE?",
+                "By declaring data sources in manifest.json (not in code), UI5 can:",
+                "  1. Automatically create OData models from them",
+                "  2. Swap the real service for mock data during development",
+                "  3. Show data source info in the diagnostics tool (Ctrl+Alt+Shift+S)",
+                "  4. Enable the SAP Fiori Launchpad to manage service connections",
+                "",
+                "[ADVANCED] In SAP BTP / Cloud Foundry deployments, the actual service",
+                "URLs are often overridden by destination configurations, so the URI",
+                "here acts as a relative reference that gets resolved at runtime."
+            ],
+
+            "mainService": {
+                "uri": "/sap/opu/odata/sap/SHOP_SRV/",
+                "type": "OData",
+                "settings": {
+                    "odataVersion": "2.0",
+                    "localUri": "localService/metadata.xml"
+                },
+                "_comment_mainService": [
+                    "[BEGINNER] 'mainService' — Our Primary OData Service",
+                    "",
+                    "uri: '/sap/opu/odata/sap/SHOP_SRV/'",
+                    "  The URL path to the OData service. In a real SAP system, this",
+                    "  would point to a backend service created in SAP Gateway (SEGW).",
+                    "  The '/sap/opu/odata/sap/' prefix is SAP's standard path for",
+                    "  OData services. 'SHOP_SRV' is the service name.",
+                    "",
+                    "type: 'OData'",
+                    "  Tells UI5 this is an OData service (as opposed to JSON or XML).",
+                    "",
+                    "settings.odataVersion: '2.0'",
+                    "  We're using OData v2 (the most common in SAP systems).",
+                    "  OData v4 is newer and has a different model class in UI5:",
+                    "    v2 → sap.ui.model.odata.v2.ODataModel",
+                    "    v4 → sap.ui.model.odata.v4.ODataModel",
+                    "",
+                    "  [GOTCHA] v2 and v4 have VERY different APIs. Code written for",
+                    "  v2 will NOT work with v4 and vice versa. Don't mix them up!",
+                    "",
+                    "settings.localUri: 'localService/metadata.xml'",
+                    "  Path to a local copy of the OData service metadata. This is",
+                    "  used for local mock server development so you can build the",
+                    "  frontend without a running backend.",
+                    "",
+                    "[INTERMEDIATE] WHAT IS OData?",
+                    "  OData (Open Data Protocol) is a REST-based protocol that SAP",
+                    "  heavily uses. It provides standardized CRUD operations:",
+                    "    - GET /Products          → Read all products",
+                    "    - GET /Products('P001')  → Read one product",
+                    "    - POST /Products         → Create a product",
+                    "    - PUT /Products('P001')  → Update a product",
+                    "    - DELETE /Products('P001') → Delete a product",
+                    "",
+                    "  UI5's ODataModel handles all of this automatically. You rarely",
+                    "  write raw HTTP requests — the model does it for you."
+                ]
+            }
+        }
+    },
+
+    "sap.ui": {
+        "_comment_sap_ui": [
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            "  sap.ui — UI TECHNOLOGY METADATA",
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            "",
+            "[BEGINNER] This section describes the UI technology used.",
+            "It's mostly informational but affects how the app is loaded",
+            "and which device types are supported."
+        ],
+
+        "technology": "UI5",
+        "_comment_technology": [
+            "[BEGINNER] The UI framework being used. Always 'UI5' for UI5 apps.",
+            "Other SAP technologies might use 'Web Dynpro' or 'BSP' here,",
+            "but those are legacy technologies."
+        ],
+
+        "deviceTypes": {
+            "desktop": true,
+            "tablet": true,
+            "phone": true
+        },
+        "_comment_deviceTypes": [
+            "[BEGINNER] Declares which device types your app supports.",
+            "Setting all to true means your app should work on desktops,",
+            "tablets, and phones.",
+            "",
+            "[INTERMEDIATE] The Fiori Launchpad uses this to decide whether",
+            "to show the app tile on a particular device type. If phone is",
+            "false, phone users won't see this app in their launchpad.",
+            "",
+            "[BEST PRACTICE] When using sap.m controls, your app is",
+            "automatically responsive. Set all to true and test on multiple",
+            "screen sizes. Only set false if you KNOW it won't work on",
+            "a device type.",
+            "",
+            "[ADVANCED] You can also check device type at runtime:",
+            "  sap.ui.Device.system.desktop / .tablet / .phone",
+            "This is useful for conditional logic (e.g., show a master-detail",
+            "layout on desktop but a single list on phone)."
+        ]
+    },
+
+    "sap.ui5": {
+        "_comment_sap_ui5": [
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            "  sap.ui5 — UI5-SPECIFIC CONFIGURATION",
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            "",
+            "[BEGINNER] This is the BIGGEST and most important section.",
+            "It configures everything UI5-specific about your app:",
+            "  - What view to show first (rootView)",
+            "  - What libraries to load (dependencies)",
+            "  - What data models to create (models)",
+            "  - How navigation works (routing)",
+            "  - CSS and content density",
+            "",
+            "This section is ONLY read by the UI5 runtime. The SAP Fiori",
+            "Launchpad primarily looks at sap.app and sap.ui."
+        ],
+
+        "rootView": {
+            "viewName": "com.shopeasy.app.view.App",
+            "type": "XML",
+            "id": "app",
+            "async": true
+        },
+        "_comment_rootView": [
+            "[BEGINNER] rootView — THE FIRST VIEW YOUR APP DISPLAYS",
+            "",
+            "This is like React's <App /> component — the top-level view",
+            "that wraps everything else. All other views are rendered INSIDE",
+            "this root view.",
+            "",
+            "viewName: 'com.shopeasy.app.view.App'",
+            "  The full namespace path to the view. UI5 resolves this to:",
+            "    ./view/App.view.xml",
+            "  (because of our resourceroots mapping)",
+            "",
+            "type: 'XML'",
+            "  UI5 supports 4 view types: XML, JavaScript, JSON, and HTML.",
+            "  [BEST PRACTICE] ALWAYS use XML views. They are:",
+            "    - Declarative (easier to read and maintain)",
+            "    - Supported by UI5 tooling (code completion, linting)",
+            "    - Required for Fiori elements and flexible programming model",
+            "    - Automatically optimized by the UI5 build tools",
+            "",
+            "  [ANTI-PATTERN] Don't use JavaScript views. They were popular",
+            "  in early UI5 but are now considered legacy. XML views provide",
+            "  better separation of concerns (view = XML, logic = JS controller).",
+            "",
+            "id: 'app'",
+            "  The id for this view instance. Combined with the component id,",
+            "  the full id becomes: 'shopeasy--app'",
+            "",
+            "async: true",
+            "  Load the view asynchronously. Always set to true.",
+            "  [GOTCHA] This must align with data-sap-ui-async in index.html."
+        ],
+
+        "dependencies": {
+            "_comment_dependencies": [
+                "[BEGINNER] DEPENDENCIES — Libraries Your App Needs",
+                "",
+                "UI5 is modular. You don't load the entire framework — just the",
+                "libraries you need. This list tells UI5 which libraries to preload",
+                "so controls are available when your views need them.",
+                "",
+                "[INTERMEDIATE] Each library provides a set of controls:",
+                "  - sap.m: Mobile-optimized controls (Button, List, Page, etc.)",
+                "          This is the MAIN library you'll use for almost everything.",
+                "  - sap.ui.core: Core framework (required, provides base classes)",
+                "  - sap.ui.layout: Layout controls (Grid, Splitter, VerticalLayout)",
+                "  - sap.f: Fiori-specific controls (FlexibleColumnLayout, Avatar,",
+                "           ShellBar, DynamicPage, semantic pages)",
+                "",
+                "[ADVANCED] Libraries not listed here will be loaded on-demand when",
+                "a control from that library is first used. But preloading avoids",
+                "the delay when navigating to a view that uses those controls."
+            ],
+
+            "minUI5Version": "1.120.0",
+            "_comment_minUI5Version": [
+                "[INTERMEDIATE] The MINIMUM UI5 version required to run this app.",
+                "If the runtime version is lower, a warning is logged.",
+                "This is for documentation/deployment — it doesn't actually block",
+                "the app from running on older versions (but things might break).",
+                "",
+                "[BEST PRACTICE] Set this to the version you're developing with.",
+                "Check your version at: https://openui5.hana.ondemand.com/"
+            ],
+
+            "libs": {
+                "sap.m": {},
+                "sap.ui.core": {},
+                "sap.ui.layout": {},
+                "sap.f": {}
+            }
+        },
+
+        "models": {
+            "i18n": {
+                "type": "sap.ui.model.resource.ResourceModel",
+                "settings": {
+                    "bundleName": "com.shopeasy.app.i18n.i18n"
+                },
+                "_comment_i18n_model": [
+                    "[BEGINNER] THE i18n (INTERNATIONALIZATION) MODEL",
+                    "",
+                    "i18n (short for 'internationalization' — there are 18 letters",
+                    "between the 'i' and 'n'!) handles translations and locale-specific",
+                    "text in your app.",
+                    "",
+                    "type: 'sap.ui.model.resource.ResourceModel'",
+                    "  This special model type reads .properties files (simple key=value",
+                    "  text files) and makes their values available in views.",
+                    "",
+                    "bundleName: 'com.shopeasy.app.i18n.i18n'",
+                    "  Points to: ./i18n/i18n.properties",
+                    "  The file would contain entries like:",
+                    "    appTitle=ShopEasy",
+                    "    productListTitle=Our Products",
+                    "    addToCartBtn=Add to Cart",
+                    "",
+                    "  For German translation, you'd create i18n_de.properties:",
+                    "    appTitle=ShopEasy",
+                    "    productListTitle=Unsere Produkte",
+                    "    addToCartBtn=In den Warenkorb",
+                    "",
+                    "  UI5 automatically loads the right file based on the user's",
+                    "  browser language setting.",
+                    "",
+                    "  [BEST PRACTICE] ALWAYS use i18n for user-visible text.",
+                    "  Never hardcode strings in views or controllers.",
+                    "",
+                    "  [GOTCHA] The ResourceModel is ONE-WAY only. You cannot write",
+                    "  to it at runtime — it's read-only from the .properties files."
+                ]
+            },
+
+            "cart": {
+                "type": "sap.ui.model.json.JSONModel",
+                "settings": {
+                    "data": {
+                        "items": [],
+                        "totalPrice": 0,
+                        "itemCount": 0,
+                        "currency": "USD"
+                    }
+                },
+                "_comment_cart_model": [
+                    "[BEGINNER] THE CART MODEL — Local Client-Side Data",
+                    "",
+                    "This JSONModel holds the shopping cart data entirely on the",
+                    "client side (in the browser). It's NOT connected to any backend.",
+                    "",
+                    "type: 'sap.ui.model.json.JSONModel'",
+                    "  JSONModel is the simplest model type. It holds a plain JavaScript",
+                    "  object and provides data binding to views. Think of it like",
+                    "  React's useState() but for the entire app.",
+                    "",
+                    "settings.data: The initial data structure.",
+                    "  - items: []          → Array of products added to cart",
+                    "  - totalPrice: 0      → Running total of all items",
+                    "  - itemCount: 0       → Number of items in cart",
+                    "  - currency: 'USD'    → Currency for display",
+                    "",
+                    "In views, you access cart data with the 'cart>' prefix:",
+                    "  {cart>/items}        → The items array",
+                    "  {cart>/totalPrice}   → The total price",
+                    "  {cart>/itemCount}    → Number of items",
+                    "",
+                    "[INTERMEDIATE] JSONModel vs ODataModel:",
+                    "  JSONModel: Client-only, you manage the data manually.",
+                    "             Great for app state (cart, settings, UI state).",
+                    "  ODataModel: Connected to a server, CRUD operations are built-in.",
+                    "              Great for business data (products, orders, users).",
+                    "",
+                    "[ADVANCED] JSONModel has a default size limit of 100 items",
+                    "for list bindings. If your cart could have more than 100 items",
+                    "(unlikely but possible), call:",
+                    "  oModel.setSizeLimit(500);"
+                ]
+            }
+        },
+
+        "routing": {
+            "_comment_routing_overview": [
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                "  ROUTING — Navigation Between Pages",
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                "",
+                "[BEGINNER] WHAT IS ROUTING?",
+                "Routing is the system that controls which page/view the user sees",
+                "based on the URL. It's exactly like React Router or Vue Router.",
+                "",
+                "Examples:",
+                "  URL: #/                      → Show Home page",
+                "  URL: #/products/electronics  → Show products in 'electronics' category",
+                "  URL: #/product/P001          → Show details for product P001",
+                "  URL: #/cart                  → Show shopping cart",
+                "",
+                "[INTERMEDIATE] HOW ROUTING WORKS IN UI5",
+                "  1. User navigates (clicks link, uses browser back/forward)",
+                "  2. The URL hash changes (the part after #)",
+                "  3. The Router matches the hash against defined route patterns",
+                "  4. The matched route activates its 'target'",
+                "  5. The target loads the corresponding view",
+                "  6. The view is rendered in the rootView's designated area",
+                "",
+                "[ADVANCED] UI5 uses HASH-BASED routing by default (#/path).",
+                "This means navigation doesn't cause full page reloads — it's a",
+                "Single Page Application (SPA). The hash is never sent to the server."
+            ],
+
+            "config": {
+                "routerClass": "sap.m.routing.Router",
+                "viewType": "XML",
+                "viewPath": "com.shopeasy.app.view",
+                "controlId": "app",
+                "controlAggregation": "pages",
+                "transition": "slide",
+                "async": true,
+                "_comment_config": [
+                    "[BEGINNER] ROUTING CONFIG — Default Settings for All Routes",
+                    "",
+                    "routerClass: 'sap.m.routing.Router'",
+                    "  The router implementation to use. sap.m.routing.Router is the",
+                    "  standard mobile-ready router that supports transitions.",
+                    "  Alternative: 'sap.ui.core.routing.Router' (no transitions).",
+                    "",
+                    "viewType: 'XML'",
+                    "  Default view type for all targets. XML is recommended.",
+                    "",
+                    "viewPath: 'com.shopeasy.app.view'",
+                    "  The base path for view files. When a target says viewName: 'Home',",
+                    "  the router looks for: com.shopeasy.app.view.Home",
+                    "  Which resolves to: ./view/Home.view.xml",
+                    "",
+                    "controlId: 'app'",
+                    "  [INTERMEDIATE] The ID of the CONTROL in the root view that acts",
+                    "  as the navigation container. Typically an sap.m.App or",
+                    "  sap.m.SplitApp control. The router renders target views INTO",
+                    "  this control.",
+                    "",
+                    "controlAggregation: 'pages'",
+                    "  [INTERMEDIATE] The aggregation of the control (identified by",
+                    "  controlId) where target views are placed. For sap.m.App, the",
+                    "  'pages' aggregation holds the navigable pages.",
+                    "",
+                    "  [ADVANCED] Think of it like this:",
+                    "    <App id='app'>          ← controlId='app'",
+                    "      <pages>               ← controlAggregation='pages'",
+                    "        <Home />             ← target view rendered here",
+                    "      </pages>",
+                    "    </App>",
+                    "",
+                    "transition: 'slide'",
+                    "  The animation when navigating between pages.",
+                    "  Options: 'slide', 'fade', 'flip', 'show' (no animation).",
+                    "",
+                    "async: true",
+                    "  Load target views asynchronously. Always true in modern UI5."
+                ]
+            },
+
+            "routes": [
+                {
+                    "name": "home",
+                    "pattern": "",
+                    "target": ["home"],
+                    "_comment": [
+                        "[BEGINNER] HOME ROUTE — The Landing Page",
+                        "pattern: '' (empty string) matches the root URL (#/)",
+                        "This is the first page users see when they open the app."
+                    ]
+                },
+                {
+                    "name": "productList",
+                    "pattern": "products/{categoryId}",
+                    "target": ["productList"],
+                    "_comment": [
+                        "[BEGINNER] PRODUCT LIST ROUTE — Products by Category",
+                        "",
+                        "pattern: 'products/{categoryId}'",
+                        "  {categoryId} is a ROUTE PARAMETER — a placeholder that",
+                        "  captures part of the URL.",
+                        "",
+                        "  URL: #/products/electronics → categoryId = 'electronics'",
+                        "  URL: #/products/clothing    → categoryId = 'clothing'",
+                        "",
+                        "  In the controller, you read this parameter:",
+                        "    onPatternMatched: function(oEvent) {",
+                        "      var sCategoryId = oEvent.getParameter('arguments').categoryId;",
+                        "    }",
+                        "",
+                        "[INTERMEDIATE] Route parameters are similar to React Router's",
+                        "  useParams() hook or Express.js route params (req.params)."
+                    ]
+                },
+                {
+                    "name": "productDetail",
+                    "pattern": "product/{productId}",
+                    "target": ["productDetail"],
+                    "_comment": [
+                        "[BEGINNER] PRODUCT DETAIL ROUTE — Single Product View",
+                        "",
+                        "pattern: 'product/{productId}'",
+                        "  Note: 'product' (singular) vs 'products' (plural) in the",
+                        "  product list route. This is a common URL design convention:",
+                        "    /products/electronics  → List of items in a category",
+                        "    /product/P001          → Details for one specific item"
+                    ]
+                },
+                {
+                    "name": "cart",
+                    "pattern": "cart",
+                    "target": ["cart"],
+                    "_comment": [
+                        "[BEGINNER] CART ROUTE — Shopping Cart Page",
+                        "pattern: 'cart' — A simple static pattern with no parameters.",
+                        "URL: #/cart → Shows the shopping cart."
+                    ]
+                },
+                {
+                    "name": "checkout",
+                    "pattern": "checkout",
+                    "target": ["checkout"],
+                    "_comment": [
+                        "[BEGINNER] CHECKOUT ROUTE — Checkout Page",
+                        "pattern: 'checkout' — Another static route.",
+                        "URL: #/checkout → Shows the checkout/payment page."
+                    ]
+                }
+            ],
+            "_comment_routes": [
+                "[BEGINNER] ROUTES ARRAY — Mapping URLs to Views",
+                "",
+                "Each route object has:",
+                "  - name: A unique identifier for the route (used in code to navigate)",
+                "  - pattern: The URL pattern to match (after the #)",
+                "  - target: Array of target names to display when this route matches",
+                "",
+                "[INTERMEDIATE] NAVIGATING IN CODE",
+                "To navigate to a route from a controller, use:",
+                "  this.getOwnerComponent().getRouter().navTo('productDetail', {",
+                "    productId: 'P001'",
+                "  });",
+                "",
+                "This changes the URL to #/product/P001 and loads the productDetail target.",
+                "",
+                "[GOTCHA] Route ORDER MATTERS! Routes are matched top-to-bottom.",
+                "Put more specific patterns before general ones. For example:",
+                "  'products/{id}' should come before 'products' (if both existed),",
+                "  otherwise 'products' would always match first.",
+                "",
+                "[ADVANCED] You can also use optional parameters:",
+                "  'products/{categoryId}/:optional:' — the last segment is optional.",
+                "And query parameters:",
+                "  'products{?query}' — captures everything after '?' "
+            ],
+
+            "targets": {
+                "_comment_targets_overview": [
+                    "[BEGINNER] TARGETS — What to Display for Each Route",
+                    "",
+                    "Targets define WHAT VIEW to load and WHERE to put it when a",
+                    "route is matched. Each target corresponds to a view file.",
+                    "",
+                    "The target name is used in the 'target' array of routes above.",
+                    "When a route matches, it activates its targets, which load their",
+                    "respective views.",
+                    "",
+                    "[INTERMEDIATE] WHY SEPARATE ROUTES AND TARGETS?",
+                    "Because multiple routes can share the same target (reuse views),",
+                    "and one route can activate multiple targets simultaneously",
+                    "(e.g., in a split-screen layout)."
+                ],
+
+                "home": {
+                    "viewId": "home",
+                    "viewName": "Home",
+                    "viewLevel": 1
+                },
+                "_comment_home_target": [
+                    "[BEGINNER] HOME TARGET",
+                    "viewName: 'Home' → Combined with viewPath config, loads:",
+                    "  com.shopeasy.app.view.Home → ./view/Home.view.xml",
+                    "",
+                    "viewLevel: 1 → Determines the slide animation direction.",
+                    "  Lower number = 'further back' in the app hierarchy.",
+                    "  Navigating from level 1 to level 2 slides LEFT (forward).",
+                    "  Navigating from level 2 to level 1 slides RIGHT (backward).",
+                    "  This gives users a natural sense of navigation depth."
+                ],
+
+                "productList": {
+                    "viewId": "productList",
+                    "viewName": "ProductList",
+                    "viewLevel": 2
+                },
+                "_comment_productList_target": [
+                    "[BEGINNER] PRODUCT LIST TARGET",
+                    "viewLevel: 2 — One level deeper than Home.",
+                    "Navigating Home(1) → ProductList(2) slides left (going deeper).",
+                    "Navigating ProductList(2) → Home(1) slides right (going back)."
+                ],
+
+                "productDetail": {
+                    "viewId": "productDetail",
+                    "viewName": "ProductDetail",
+                    "viewLevel": 3
+                },
+                "_comment_productDetail_target": [
+                    "[BEGINNER] PRODUCT DETAIL TARGET",
+                    "viewLevel: 3 — The deepest product view.",
+                    "Navigation hierarchy: Home(1) → List(2) → Detail(3)"
+                ],
+
+                "cart": {
+                    "viewId": "cart",
+                    "viewName": "Cart",
+                    "viewLevel": 2
+                },
+                "_comment_cart_target": [
+                    "[BEGINNER] CART TARGET",
+                    "viewLevel: 2 — Same level as ProductList (both are 'second-level'",
+                    "pages accessible from the Home page)."
+                ],
+
+                "checkout": {
+                    "viewId": "checkout",
+                    "viewName": "Checkout",
+                    "viewLevel": 3
+                },
+                "_comment_checkout_target": [
+                    "[BEGINNER] CHECKOUT TARGET",
+                    "viewLevel: 3 — Deeper than Cart, representing the flow:",
+                    "  Home(1) → Cart(2) → Checkout(3)"
+                ]
+            }
+        },
+
+        "contentDensities": {
+            "compact": true,
+            "cozy": true
+        },
+        "_comment_contentDensities": [
+            "[BEGINNER] CONTENT DENSITIES — Touch vs. Mouse Optimization",
+            "",
+            "UI5 has two 'density' modes that adjust the spacing and sizing",
+            "of ALL controls:",
+            "",
+            "  'compact': true",
+            "    Tighter spacing, smaller touch targets. Optimized for mouse/keyboard.",
+            "    Used on desktops where precise mouse clicks are possible.",
+            "",
+            "  'cozy': true",
+            "    More spacious, larger touch targets. Optimized for touch screens.",
+            "    Used on tablets and phones where fingers need bigger tap areas.",
+            "",
+            "[INTERMEDIATE] To apply density at runtime, add the CSS class to",
+            "the body or a container:",
+            "  document.body.classList.add('sapUiSizeCompact'); // for desktop",
+            "  document.body.classList.add('sapUiSizeCozy');    // for touch",
+            "",
+            "Or in Component.js, auto-detect based on device:",
+            "  var sContentDensity = Device.support.touch ? 'sapUiSizeCozy' : 'sapUiSizeCompact';",
+            "",
+            "[BEST PRACTICE] Support BOTH densities (set both to true here)",
+            "and auto-detect at runtime. This ensures your app looks great on",
+            "all devices."
+        ],
+
+        "resources": {
+            "css": [
+                {
+                    "uri": "css/style.css"
+                }
+            ]
+        },
+        "_comment_resources": [
+            "[BEGINNER] RESOURCES — Additional Files Your App Needs",
+            "",
+            "css: Additional CSS files to load. The uri is relative to the",
+            "webapp folder, so this loads: ./css/style.css",
+            "",
+            "This is where you put custom styling that goes beyond what UI5",
+            "themes provide. For example:",
+            "  - Custom logo positioning",
+            "  - Brand-specific colors",
+            "  - Animation tweaks",
+            "",
+            "[BEST PRACTICE] Keep custom CSS to a MINIMUM. UI5 controls are",
+            "designed to be styled through themes, not custom CSS. If you find",
+            "yourself writing a lot of CSS, you might be fighting the framework.",
+            "",
+            "[ANTI-PATTERN] Never directly style UI5 internal CSS classes",
+            "(like .sapMBtn or .sapMListItem). These are internal and can change",
+            "between UI5 versions, breaking your styling. Use 'addStyleClass()'",
+            "on controls and style your own class names instead."
+        ]
+    }
+}

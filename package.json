@@ -1,0 +1,14 @@
+{
+  "name": "ui5-learning-shopeasy",
+  "version": "1.0.0",
+  "description": "SAP UI5 Learning Project - ShopEasy Online Shopping Application",
+  "scripts": {
+    "start": "ui5 serve --open index.html",
+    "build": "ui5 build --clean-dest",
+    "test": "ui5 serve --open test/testsuite.qunit.html",
+    "lint": "eslint webapp"
+  },
+  "devDependencies": {
+    "@ui5/cli": "^3.0.0"
+  }
+}

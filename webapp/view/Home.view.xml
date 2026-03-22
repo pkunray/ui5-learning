@@ -1,0 +1,544 @@
+<!--
+========================================================================
+FILE: Home.view.xml — Landing Page / Category Browser
+NAMESPACE: com.shopeasy.app.view
+========================================================================
+
+[BEGINNER] WHAT IS THIS VIEW?
+This is the first page users see when they open ShopEasy. It:
+  1. Welcomes the user with a branded header section
+  2. Shows product categories fetched from the OData backend
+  3. Lets users click a category to browse its products
+
+[INTERMEDIATE] DATA FLOW IN THIS VIEW
+  - Page title:       Bound to i18n model → {i18n>homeTitle}
+  - Welcome text:     Bound to i18n model → static translated text
+  - Categories:       Bound to OData model → {/Categories} entity set
+  - Category details: Bound to individual category properties
+  - Navigation:       Press event → controller handler → Router.navTo()
+
+Learn more: docs/02-views-and-controllers.md, docs/03-data-binding.md
+========================================================================
+-->
+
+<mvc:View
+    controllerName="com.shopeasy.app.controller.Home"
+    xmlns="sap.m"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns:core="sap.ui.core"
+    xmlns:l="sap.ui.layout"
+    xmlns:f="sap.f"
+    xmlns:cssgrid="sap.ui.layout.cssgrid"
+>
+    <!--
+    [BEGINNER] THE <Page> CONTROL
+    ====================================================
+    sap.m.Page is the fundamental layout control for a single screen.
+    It provides:
+      - A header bar (with title, nav button, and action buttons)
+      - A scrollable content area (where your controls go)
+      - An optional footer bar (for bottom actions)
+
+    Think of it like a mobile screen with a top bar and content below.
+
+    title="{i18n>homeTitle}"
+      [BEGINNER] DATA BINDING TO i18n MODEL
+      The curly braces {} create a DATA BINDING. This tells UI5:
+        "Don't use a hardcoded string — get the value from a model."
+
+      Breaking down {i18n>homeTitle}:
+        - i18n   → The model NAME (declared in manifest.json)
+        - >      → Separator between model name and property path
+        - homeTitle → The KEY in the i18n.properties file
+
+      UI5 looks up "homeTitle" in i18n.properties and finds:
+        homeTitle=Welcome to ShopEasy
+      And displays that as the page title.
+
+      [BEST PRACTICE] ALWAYS use i18n bindings for user-visible text.
+      Never hardcode strings like title="Welcome to ShopEasy".
+      Reason: If your app needs to support German users, you just
+      create i18n_de.properties with the translated keys — no code changes!
+
+    [INTERMEDIATE] PAGE HEADER CUSTOMIZATION
+    The Page control automatically creates a sap.m.Bar as its header.
+    You can customize it with:
+      - showNavButton="true"  → Shows a back arrow (for sub-pages)
+      - headerContent         → Aggregation for custom header controls
+      - subHeader             → A second bar below the header
+    Since Home is the landing page, we don't show a nav button.
+    -->
+    <Page
+        id="homePage"
+        title="{i18n>homeTitle}"
+    >
+        <!--
+        [BEGINNER] THE <VBox> CONTROL — Vertical Layout
+        ====================================================
+        sap.m.VBox arranges its children vertically (stacked top to bottom).
+        It's the UI5 equivalent of CSS flexbox with flex-direction: column.
+
+        Common layout controls in UI5:
+          VBox  → Vertical stack (column)
+          HBox  → Horizontal stack (row)
+          FlexBox → Full flexbox control with all flex properties
+
+        class="sapUiMediumMargin"
+          [BEGINNER] SAP CSS MARGIN/PADDING CLASSES
+          UI5 provides pre-defined CSS utility classes for spacing:
+            sapUiTinyMargin     → 0.5rem margin on all sides
+            sapUiSmallMargin    → 1rem margin
+            sapUiMediumMargin   → 2rem margin
+            sapUiLargeMargin    → 3rem margin
+
+          These also have directional variants:
+            sapUiMediumMarginTop, sapUiMediumMarginBottom, etc.
+            sapUiSmallMarginBegin, sapUiSmallMarginEnd (RTL-aware!)
+
+          [BEST PRACTICE] Use sapUiMargin* classes instead of custom CSS.
+          They respect the current theme and RTL (right-to-left) mode.
+          "Begin" and "End" are used instead of "Left" and "Right" to
+          support RTL languages like Arabic and Hebrew automatically.
+        -->
+        <VBox class="sapUiMediumMargin">
+            <!--
+            [BEGINNER] THE <Title> CONTROL
+            sap.m.Title renders a styled heading text. The "level" attribute
+            controls the semantic HTML heading level (H1, H2, H3...) for
+            accessibility. Screen readers use heading levels to help
+            visually impaired users navigate the page structure.
+
+            titleStyle="H1" controls the VISUAL size of the heading.
+            level="H1" controls the SEMANTIC meaning for accessibility.
+
+            [BEST PRACTICE] Always set both titleStyle AND level:
+              - titleStyle = how it LOOKS (visual)
+              - level = what it MEANS (semantic/accessibility)
+            They can differ: you might want something that LOOKS like H2
+            but IS semantically H1 (the main heading of the page).
+            -->
+            <Title
+                text="{i18n>homeTitle}"
+                titleStyle="H1"
+                level="H1"
+                class="sapUiSmallMarginBottom"
+            />
+
+            <!--
+            [BEGINNER] THE <Text> CONTROL
+            sap.m.Text renders a plain text paragraph. Unlike Title, it
+            has no heading semantics — it's just body text.
+
+            Properties:
+              text   → The text content (can be bound to a model)
+              width  → CSS width (optional, defaults to auto)
+
+            [INTERMEDIATE] Text wrapping behavior:
+              - By default, Text wraps to multiple lines
+              - Set maxLines="2" to truncate with ellipsis after 2 lines
+              - Set wrapping="false" to disable wrapping entirely
+            -->
+            <Text
+                text="{i18n>homeSubtitle}"
+                class="sapUiSmallMarginBottom sapThemeText"
+            />
+        </VBox>
+
+        <!--
+        [BEGINNER] THE <IconTabBar> CONTROL — Tab Navigation
+        ====================================================
+        sap.m.IconTabBar provides a tabbed interface. Each tab can have:
+          - An icon
+          - A text label
+          - A count badge
+          - Content below the tab strip
+
+        We're using it here NOT as traditional tabs, but as a visual
+        category selector. Users see category icons and click to browse.
+
+        [INTERMEDIATE] IconTabBar has two usage patterns:
+          1. TAB CONTAINER: Each tab has different content below it
+             (like browser tabs). Use the <items> aggregation with
+             <content> inside each IconTabFilter.
+          2. FILTER BAR: Tabs act as filters/navigation triggers.
+             Pair with a select event handler. Content stays the same
+             but the data changes.
+
+        We use pattern #2: clicking a tab navigates to the product list.
+
+        select=".onCategorySelect"
+          [BEGINNER] EVENT HANDLING IN XML VIEWS
+          The dot-prefix "." means "call a method on the controller".
+          So .onCategorySelect calls:
+            this.onCategorySelect(oEvent) in Home.controller.js
+
+          [GOTCHA] Without the dot, UI5 looks for a GLOBAL function,
+          which almost always fails. Always use the dot prefix!
+
+        headerMode="Inline"
+          [INTERMEDIATE] Controls how the tab headers are rendered:
+            - "Standard": Icon above text (larger tabs)
+            - "Inline": Icon and text side by side (compact tabs)
+
+        class="sapUiResponsiveContentPadding"
+          [INTERMEDIATE] A responsive padding class that adjusts padding
+          based on screen size. On phones it's small, on desktops it's larger.
+          This is part of UI5's responsive design system.
+        -->
+        <IconTabBar
+            id="categoryTabBar"
+            select=".onCategorySelect"
+            headerMode="Inline"
+            class="sapUiResponsiveContentPadding"
+            stretchContentHeight="false"
+            expandable="false"
+        >
+            <!--
+            [BEGINNER] THE <items> AGGREGATION
+            ====================================================
+            In UI5, a control can contain other controls through
+            "aggregations". The <items> element is the aggregation of
+            IconTabBar that holds its tab items (IconTabFilter controls).
+
+            [BEGINNER] AGGREGATION BINDING — Repeating a Template
+            Instead of manually writing one <IconTabFilter> per category,
+            we use AGGREGATION BINDING to automatically create one for
+            EACH entry in the /Categories entity set.
+
+            items="{/Categories}"
+              This tells UI5:
+                1. Read the /Categories collection from the default model
+                2. For each category in the collection, create ONE
+                   IconTabFilter using the template below
+                3. Each generated IconTabFilter gets a "binding context"
+                   pointing to its category data
+
+              It's similar to React's:
+                {categories.map(cat => <Tab key={cat.id} .../>)}
+
+            [INTERMEDIATE] BINDING SYNTAX BREAKDOWN
+              items="{/Categories}"
+                - { }          → Data binding expression
+                - /            → Root of the model (absolute path)
+                - Categories   → The OData entity set name
+
+              This is the SHORT syntax for aggregation binding. The full
+              (complex) syntax allows more options:
+                items="{
+                  path: '/Categories',
+                  sorter: { path: 'Name', descending: false },
+                  filters: [{ path: 'Active', operator: 'EQ', value1: true }]
+                }"
+
+            [ADVANCED] OData AGGREGATION BINDING INTERNALS
+            When UI5 processes items="{/Categories}":
+              1. It creates an ODataListBinding for path "/Categories"
+              2. The ODataModel sends: GET /sap/opu/odata/sap/SHOP_SRV/Categories
+              3. The response contains an array of category entities
+              4. For each entity, UI5 clones the template (IconTabFilter)
+              5. Each clone gets a binding context like "/Categories('CAT001')"
+              6. Property bindings inside the template (like {Name}) resolve
+                 relative to this context
+            -->
+            <items>
+                <!--
+                [BEGINNER] THE <IconTabFilter> CONTROL — A Single Tab
+                ====================================================
+                Each IconTabFilter represents one tab in the IconTabBar.
+
+                key="{CategoryId}"
+                  A unique identifier for this tab. Used in the select
+                  event to know WHICH category the user clicked.
+                  Bound to the CategoryId property of each category entity.
+
+                text="{Name}"
+                  The label displayed on the tab. Bound to the category Name.
+                  Example: "Electronics", "Clothing", "Books"
+
+                icon="{Icon}"
+                  An icon displayed on the tab. UI5 uses the SAP icon font.
+                  Example: "sap-icon://laptop" shows a laptop icon.
+                  Browse all icons: https://sapui5.hana.ondemand.com/test-resources/sap/m/demokit/iconExplorer/webapp/index.html
+
+                count="{__count}"
+                  [INTERMEDIATE] Shows a badge number on the tab.
+                  The __count property comes from $inlinecount in OData
+                  or can be a property on the category entity itself.
+                  This shows how many products are in each category.
+
+                [BEGINNER] RELATIVE vs ABSOLUTE BINDING PATHS
+                Notice we use {Name} not {/Name}. The leading slash
+                matters enormously:
+                  {/Name}  → ABSOLUTE path: looks at root of the model
+                  {Name}   → RELATIVE path: relative to the binding context
+
+                Since this IconTabFilter is inside an aggregation bound
+                to {/Categories}, each instance gets a context like
+                "/Categories('CAT001')". The relative path {Name} resolves
+                to "/Categories('CAT001')/Name".
+
+                Think of it like file paths:
+                  /users/john/name  → absolute (from root)
+                  name              → relative (from current directory)
+                -->
+                <IconTabFilter
+                    key="{CategoryId}"
+                    text="{Name}"
+                    icon="{Icon}"
+                    count="{ProductCount}"
+                />
+            </items>
+
+            <!--
+            [INTERMEDIATE] THE <content> AGGREGATION
+            ====================================================
+            The content below the tab strip. This area shows details
+            about the selected category and a prompt to browse products.
+            -->
+            <content>
+                <VBox
+                    class="sapUiSmallMargin"
+                    alignItems="Center"
+                >
+                    <!--
+                    [INTERMEDIATE] THE <IllustratedMessage> CONTROL
+                    ====================================================
+                    sap.m.IllustratedMessage shows a graphical illustration
+                    with a title and description. UI5 comes with built-in
+                    illustration types for common scenarios:
+                      - EmptyList
+                      - NoSearchResults
+                      - NoData
+                      - ErrorScreen
+                      - SuccessScreen
+                      and many more...
+
+                    illustrationType="sapIllus-SimpleBalloon"
+                      Points to a built-in illustration SVG. SAP provides
+                      a library of professional illustrations that match
+                      the Fiori design language.
+
+                    [BEST PRACTICE] Use IllustratedMessage for empty states
+                    and error states instead of just showing blank space.
+                    Good UX always tells the user WHY something is empty
+                    and WHAT they can do about it.
+                    -->
+                    <IllustratedMessage
+                        illustrationType="sapIllus-SimpleBalloon"
+                        title="{i18n>homeTitle}"
+                        description="{i18n>homeSubtitle}"
+                    >
+                        <!--
+                        [BEGINNER] additionalContent AGGREGATION
+                        IllustratedMessage has a special aggregation for
+                        adding interactive controls (buttons, links) below
+                        the illustration and text.
+                        -->
+                        <additionalContent>
+                            <!--
+                            [BEGINNER] THE <Button> CONTROL
+                            ====================================================
+                            sap.m.Button is the most fundamental interactive control.
+
+                            text="{i18n>continueShopping}"
+                              Button label from i18n.
+
+                            type="Emphasized"
+                              [BEGINNER] Button types control visual styling:
+                                - "Default"    → Standard grey button
+                                - "Emphasized" → Primary action (blue/highlighted)
+                                - "Accept"     → Positive action (green tint)
+                                - "Reject"     → Negative action (red tint)
+                                - "Transparent" → No background (text-only look)
+                                - "Ghost"      → Transparent with border on hover
+
+                              [BEST PRACTICE] Only ONE button per page should be
+                              "Emphasized" — the primary action the user should take.
+                              Having multiple emphasized buttons confuses users.
+
+                            press=".onContinueShopping"
+                              [BEGINNER] The press event fires when the user clicks
+                              or taps the button. The "." prefix calls the method
+                              on the controller.
+                            -->
+                            <Button
+                                text="{i18n>continueShopping}"
+                                type="Emphasized"
+                                press=".onCategorySelect"
+                            />
+                        </additionalContent>
+                    </IllustratedMessage>
+                </VBox>
+            </content>
+        </IconTabBar>
+
+        <!--
+        [INTERMEDIATE] GRID LIST FOR CATEGORY CARDS
+        ====================================================
+        Below the IconTabBar, we also show categories as visual cards
+        in a responsive grid layout. This provides an alternative
+        browsing experience.
+
+        [ADVANCED] THE <f:GridList> CONTROL
+        sap.f.GridList is a list control that arranges its items in a
+        CSS Grid layout. Unlike a regular List that stacks items
+        vertically, GridList can create multi-column card layouts.
+
+        The f: prefix maps to the sap.f library (Fiori controls),
+        declared in the xmlns:f attribute on the View element.
+        -->
+        <f:GridList
+            id="categoryGrid"
+            headerText="{i18n>category}"
+            items="{/Categories}"
+            class="sapUiSmallMargin"
+        >
+            <!--
+            [ADVANCED] CUSTOM GRID LAYOUT
+            ====================================================
+            The customLayout aggregation lets you define the CSS Grid
+            template for the GridList. GridBoxLayout provides a
+            simplified API for common grid patterns.
+
+            boxMinWidth="16rem"
+              Each card is at least 16rem wide. The grid automatically
+              calculates how many columns fit in the available space:
+                - 320px viewport → 1 column
+                - 768px viewport → 2-3 columns
+                - 1200px viewport → 4+ columns
+
+            [INTERMEDIATE] This is pure CSS Grid under the hood.
+            UI5 generates: grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr))
+            This is a modern responsive pattern that adapts without
+            media queries — the grid itself decides column count.
+            -->
+            <f:customLayout>
+                <cssgrid:GridBoxLayout boxMinWidth="16rem" />
+            </f:customLayout>
+
+            <!--
+            [INTERMEDIATE] GridListItem — Each Category Card
+            ====================================================
+            sap.f.GridListItem is a list item designed for grid layouts.
+
+            type="Active"
+              [BEGINNER] List item types control interactivity:
+                - "Inactive"    → No press effect, not clickable
+                - "Active"      → Highlights on press, fires press event
+                - "Navigation"  → Shows a chevron (>) indicating navigation
+                - "Detail"      → Shows a detail button
+                - "DetailAndActive" → Both detail button and press
+
+              We use "Active" so the card highlights when tapped, giving
+              the user visual feedback that it's interactive.
+
+            press=".onCategoryPress"
+              Fires when the user clicks/taps this card. The controller
+              handler reads the CategoryId from the binding context and
+              navigates to the productList route.
+
+            [INTERMEDIATE] EXPRESSION BINDING EXAMPLE
+            ====================================================
+            Expression binding allows inline JavaScript expressions in
+            XML views. The syntax is: {= expression }
+
+            Example used below on the VBox:
+              visible="{= ${ProductCount} > 0 }"
+
+            Breaking it down:
+              {= ... }           → Expression binding delimiters
+              ${NumberOfProducts} → Read the NumberOfProducts property
+                                    ($ is required inside expressions)
+              > 0                → JavaScript comparison
+
+            This evaluates to true/false, controlling visibility.
+            Only categories with products are shown.
+
+            [ADVANCED] EXPRESSION BINDING CAPABILITIES
+            Expression binding supports:
+              - Comparison: ==, !=, <, >, <=, >=
+              - Logical: &&, ||, !
+              - Ternary: condition ? 'yes' : 'no'
+              - Math: +, -, *, /
+              - String: + (concatenation)
+              - Type cast: ${path} (reads from model)
+              - Formatter: Not supported (use regular binding)
+
+            Limitations:
+              - No function calls (no .toUpperCase(), etc.)
+              - No variable declarations
+              - No loops or conditionals (only ternary)
+              - Harder to debug than formatters (no breakpoints)
+
+            [BEST PRACTICE] Use expression binding for simple boolean
+            checks (visibility, enabled state). Use formatters for
+            anything more complex.
+            -->
+            <f:GridListItem
+                type="Active"
+                press=".onCategoryPress"
+            >
+                <VBox
+                    class="sapUiSmallMargin"
+                    height="8rem"
+                >
+                    <!--
+                    [BEGINNER] <core:Icon> — Displaying Icons
+                    ====================================================
+                    sap.ui.core.Icon renders an icon from the SAP icon font.
+
+                    src="{Icon}"
+                      Bound to the Icon property of the category entity.
+                      Values look like: "sap-icon://laptop"
+
+                    size="2rem"
+                      The icon size in CSS units.
+
+                    color="#0854A0"
+                      The icon color. You can use hex colors or UI5 theme
+                      parameters like "Default", "Positive", "Critical".
+
+                    [INTERMEDIATE] SAP ICON FONT
+                    UI5 includes 500+ vector icons via a custom web font.
+                    They scale perfectly at any size (no pixelation) and
+                    can be colored with CSS.
+
+                    All icons use the "sap-icon://" protocol prefix.
+                    Browse them: search for "Icon Explorer" in UI5 demo kit.
+                    -->
+                    <core:Icon
+                        src="{Icon}"
+                        size="2rem"
+                        class="sapUiSmallMarginBottom"
+                    />
+
+                    <Title text="{Name}" level="H3" />
+
+                    <!--
+                    [INTERMEDIATE] EXPRESSION BINDING FOR DYNAMIC TEXT
+                    ====================================================
+                    Here we use expression binding to construct a dynamic
+                    string that includes a model value:
+
+                    text="{= ${NumberOfProducts} + ' Products'}"
+
+                    This concatenates the NumberOfProducts value with the
+                    static string ' Products'. For example:
+                      NumberOfProducts = 12 → "12 Products"
+
+                    [BEST PRACTICE] In production, the static text
+                    ' Products' should come from i18n for translation.
+                    For learning purposes, we inline it here to
+                    demonstrate expression binding string concatenation.
+                    -->
+                    <Text
+                        text="{= ${ProductCount} + ' Products'}"
+                        class="sapUiTinyMarginTop"
+                    />
+                </VBox>
+            </f:GridListItem>
+        </f:GridList>
+
+    </Page>
+
+</mvc:View>

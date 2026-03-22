@@ -1,0 +1,150 @@
+<!--
+    ============================================================================
+    ProductCard.fragment.xml
+    Namespace: com.shopeasy.app.fragment
+    ============================================================================
+
+    [BEGINNER] WHAT IS A FRAGMENT?
+    A Fragment is a lightweight, reusable UI part — think of it as a "UI snippet"
+    that you can embed inside views or other fragments. Fragments are defined in
+    separate .fragment.xml files and do NOT have their own controller. They share
+    the controller of whichever view loads them.
+
+    Key differences between Fragments and Views:
+      - Views have their own controller; Fragments do NOT.
+      - Views are standalone screens; Fragments are embedded pieces of UI.
+      - Views participate in routing; Fragments do not.
+      - A Fragment cannot exist on its own — it is always hosted inside a view
+        or another fragment.
+
+    [BEGINNER] WHY USE FRAGMENTS?
+    Use fragments when you have a piece of UI that:
+      1. Repeats across multiple views (e.g. a product card used on the home page,
+         search results, and wishlist).
+      2. Should be extracted for readability (large views become hard to maintain).
+      3. Needs to be loaded conditionally or lazily (e.g. a dialog that only
+         appears when the user clicks a button).
+
+    [INTERMEDIATE] HOW FRAGMENTS ARE LOADED
+    There are several ways to load a fragment:
+
+      1. Declaratively in XML (inline):
+         <core:Fragment fragmentName="com.shopeasy.app.fragment.ProductCard" type="XML" />
+
+      2. Programmatically (async, recommended in UI5 1.93+):
+         Fragment.load({
+             id: this.getView().getId(),
+             name: "com.shopeasy.app.fragment.ProductCard",
+             controller: this   // pass the hosting view's controller
+         }).then(function(oFragment) {
+             // insert into a container, e.g. this.byId("cardContainer").addItem(oFragment);
+         });
+
+      3. Legacy synchronous API (deprecated):
+         sap.ui.xmlfragment("com.shopeasy.app.fragment.ProductCard", this);
+
+    [INTERMEDIATE] BINDING CONTEXT IN FRAGMENTS
+    Fragments do NOT create their own binding context. They inherit whatever
+    binding context the parent control provides. For example, if a List binds
+    its items to "/Products" and each list item template uses this fragment,
+    each fragment instance automatically receives the corresponding product's
+    binding context. The relative paths below ({Name}, {Price}, etc.) resolve
+    against that inherited context.
+
+    [ADVANCED] FRAGMENT ID PREFIXING
+    When loading fragments programmatically, always pass the view ID as a prefix
+    so that controls inside the fragment can be found via this.byId(). Without
+    the prefix, IDs may collide if the same fragment is used multiple times.
+
+    [BEST PRACTICE] Keep fragments focused on a single responsibility. This
+    ProductCard fragment handles rendering one product card — nothing more.
+    Business logic (e.g. handling a click) stays in the hosting view's controller.
+    ============================================================================
+-->
+<core:FragmentDefinition
+    xmlns:core="sap.ui.core"
+    xmlns="sap.m">
+
+    <!--
+        [BEGINNER] core:FragmentDefinition is the required root element for
+        every XML fragment. It serves as a transparent wrapper — it does NOT
+        render any HTML of its own. You can place one or more controls inside it.
+    -->
+
+    <VBox
+        class="sapUiSmallMargin"
+        width="16rem">
+
+        <!--
+            [BEGINNER] The VBox arranges child controls vertically. We use it
+            here to stack product image, name, price, status, and rating.
+        -->
+
+        <!-- Product image -->
+        <Image
+            src="{ImageUrl}"
+            width="100%"
+            height="12rem"
+            mode="Background"
+            backgroundSize="cover"
+            alt="{Name}"
+            class="sapUiSmallMarginBottom" />
+
+        <!--
+            [INTERMEDIATE] We use addStyleClass via the "class" attribute to
+            apply standard SAP spacing classes (sapUiSmallMargin, etc.) so the
+            layout stays consistent with Fiori Design Guidelines.
+        -->
+
+        <!-- Product name (bold) -->
+        <Title
+            text="{Name}"
+            level="H5"
+            class="sapUiTinyMarginBottom" />
+
+        <!-- Price displayed as an ObjectNumber for automatic formatting -->
+        <ObjectNumber
+            number="{
+                path: 'Price',
+                type: 'sap.ui.model.type.Currency',
+                formatOptions: { showMeasure: false }
+            }"
+            unit="{CurrencyCode}"
+            emphasized="true"
+            class="sapUiTinyMarginBottom" />
+
+        <!--
+            [INTERMEDIATE] ObjectNumber is purpose-built for showing numeric
+            values with units. It applies semantic coloring and formatting
+            automatically, which is preferable to rendering price in a plain Text.
+        -->
+
+        <!-- Availability status -->
+        <ObjectStatus
+            text="{= ${Availability} > 0 ? 'In Stock' : 'Out of Stock'}"
+            state="{= ${Availability} > 0 ? 'Success' : 'Error'}"
+            class="sapUiTinyMarginBottom" />
+
+        <!--
+            [ADVANCED] The expression binding above uses the ${...} syntax
+            inside {= ... } to evaluate a JavaScript expression at runtime.
+            This lets us derive display values without writing formatter
+            functions — handy for simple conditional logic.
+        -->
+
+        <!-- Star rating (read-only) -->
+        <RatingIndicator
+            value="{Rating}"
+            maxValue="5"
+            editable="false"
+            class="sapUiTinyMarginBottom" />
+
+        <!--
+            [BEST PRACTICE] Setting editable="false" on the RatingIndicator
+            makes it purely informational. Interactive rating should be handled
+            in a dedicated review fragment or dialog, not here.
+        -->
+
+    </VBox>
+
+</core:FragmentDefinition>

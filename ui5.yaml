@@ -1,0 +1,38 @@
+# ========================================================================
+# UI5 Tooling Configuration File
+# ========================================================================
+# This file tells the UI5 CLI how to serve and build your application.
+# Think of it like webpack.config.js in React projects.
+#
+# Key concepts:
+#   - specVersion: Which version of the UI5 tooling spec to use
+#   - type: "application" means this is a standalone app (vs "library")
+#   - metadata.name: Unique identifier for your project
+#   - framework: Which UI5 version and libraries to use
+#
+# Learn more: docs/00-prerequisites.md
+# ========================================================================
+
+specVersion: "3.0"
+
+# "application" = standalone app; "library" = reusable library
+type: application
+
+metadata:
+  # This should match your component namespace
+  name: com.shopeasy.app
+
+framework:
+  # Use OpenUI5 (open-source version of SAPUI5)
+  # In a real SAP project, you might use "SAPUI5" instead
+  name: OpenUI5
+  version: "1.120.12"
+
+  # Libraries your app needs - each provides a set of UI controls
+  libraries:
+    - name: sap.m            # Main mobile (responsive) control library
+    - name: sap.ui.core      # Core framework library
+    - name: sap.ui.layout    # Layout controls (Grid, Splitter, etc.)
+    - name: sap.ui.unified   # Unified controls (Calendar, FileUploader, etc.)
+    - name: sap.f            # Fiori controls (FlexibleColumnLayout, Avatar, etc.)
+    - name: themelib_sap_horizon  # SAP Horizon theme (modern SAP look)

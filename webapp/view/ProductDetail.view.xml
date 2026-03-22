@@ -1,0 +1,496 @@
+<!--
+========================================================================
+FILE: ProductDetail.view.xml — Single Product Detail Page
+NAMESPACE: com.shopeasy.app.view
+========================================================================
+
+[BEGINNER] WHAT IS THIS VIEW?
+This view shows the full details of a single product. Users arrive
+here by clicking a product in the ProductList. It displays:
+  1. ObjectHeader with product name, price, and key attributes
+  2. IconTabBar with tabs for Description, Specifications, and Reviews
+  3. An "Add to Cart" section with quantity selector
+
+[INTERMEDIATE] KEY CONCEPTS DEMONSTRATED:
+  - Element binding (binding a whole view to one entity)
+  - ObjectHeader for rich entity display
+  - IconTabBar for tabbed content
+  - FlexBox layout for action areas
+  - StepInput for numeric input
+  - Multiple model references (default model + cart model + i18n)
+
+[ADVANCED] ELEMENT BINDING (also called "Context Binding")
+Unlike aggregation binding (which repeats a template for each entity),
+element binding binds a SINGLE entity to a control or view. This makes
+all properties of that entity available via relative binding paths.
+
+In the controller, when the route matches, we set the element binding:
+  this.getView().bindElement({
+    path: "/Products('" + sProductId + "')",
+    events: {
+      dataRequested: function() { oPage.setBusy(true); },
+      dataReceived: function() { oPage.setBusy(false); }
+    }
+  });
+
+After this, any {PropertyName} in this view resolves to:
+  /Products('P001')/PropertyName
+
+Learn more: docs/03-data-binding.md, docs/06-controls.md
+========================================================================
+-->
+
+<mvc:View
+    controllerName="com.shopeasy.app.controller.ProductDetail"
+    xmlns="sap.m"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns:core="sap.ui.core"
+>
+    <Page
+        id="productDetailPage"
+        title="{i18n>productDetailsTitle}"
+        showNavButton="true"
+        navButtonPress=".onNavBack"
+    >
+        <!--
+        [BEGINNER] busy AND busyIndicatorDelay ON THE PAGE
+        ====================================================
+        busy="{detailView>/busy}"
+          When this property is true, a semi-transparent overlay with
+          a spinner covers the entire Page, preventing user interaction.
+          Bound to a local JSONModel that the controller toggles:
+
+            this.getView().setModel(new JSONModel({ busy: true }), "detailView");
+            // ... later, when data arrives:
+            oModel.setProperty("/busy", false);
+
+        busyIndicatorDelay="0"
+          Normally, there's a short delay before the spinner appears
+          (to avoid flashing for fast loads). We set it to 0 here
+          because the product detail page should immediately show
+          "loading" while fetching the product data.
+
+        [INTERMEDIATE] This is a common pattern in Fiori apps: show
+        the page structure (header, tabs) immediately but overlay it
+        with a busy indicator until the data arrives. The user sees
+        the page skeleton, which is better than a blank screen.
+        -->
+
+        <!--
+        [BEGINNER] THE <ObjectHeader> CONTROL
+        ====================================================
+        sap.m.ObjectHeader is designed to display a business object's
+        key information in a structured header layout. It's typically
+        used at the top of detail pages.
+
+        It provides slots for:
+          - title:        Main heading (product name)
+          - number:       Key numeric value (price)
+          - numberUnit:   Unit for the number (currency)
+          - intro:        Small text above the title (category)
+          - icon:         Image or avatar
+          - attributes:   Key-value pairs (rating, review count)
+          - statuses:     Colored status indicators (availability)
+          - markers:      Flag/favorite markers
+
+        responsive="true"
+          [INTERMEDIATE] When true, the ObjectHeader automatically
+          rearranges its layout based on screen size:
+            - Desktop: Horizontal layout, title and number side by side
+            - Tablet: Slightly condensed layout
+            - Phone: Vertical layout, number below title
+
+          [BEST PRACTICE] Always set responsive="true" for detail pages.
+          This ensures the header looks good on all devices without
+          any additional responsive code.
+
+        [INTERMEDIATE] ObjectHeader vs. ObjectPageHeader
+        For simple detail pages, ObjectHeader works well. For complex
+        Fiori object pages with collapsible headers, anchor navigation,
+        and multiple sections, consider sap.uxap.ObjectPageLayout
+        with ObjectPageHeader.
+
+        [ADVANCED] ELEMENT BINDING IN ACTION
+        All the bindings below (title="{Name}", number="{Price}", etc.)
+        are RELATIVE paths. They work because the controller sets an
+        element binding on the view:
+          this.getView().bindElement("/Products('P001')");
+
+        This creates a binding context, and all relative paths resolve
+        against it:
+          {Name}     → /Products('P001')/Name     → "Wireless Mouse"
+          {Price}    → /Products('P001')/Price    → 29.99
+          {Currency} → /Products('P001')/Currency → "USD"
+        -->
+        <ObjectHeader
+            id="productHeader"
+            title="{Name}"
+            number="{
+                path: 'Price',
+                formatter: '.formatter.formatPrice'
+            }"
+            numberUnit="{Currency}"
+            responsive="true"
+            fullScreenOptimized="true"
+            icon="{ImageUrl}"
+        >
+            <!--
+            [INTERMEDIATE] OBJECT HEADER ATTRIBUTES
+            ====================================================
+            Attributes appear as key-value pairs below the header title.
+            They provide quick-glance information about the product.
+
+            [INTERMEDIATE] USING RatingIndicator INSIDE ObjectAttribute
+            The ObjectAttribute's "customContent" aggregation allows
+            embedding any control. Here we could embed a RatingIndicator,
+            but for simplicity we use a text formatter.
+            -->
+            <attributes>
+                <!--
+                [BEGINNER] ObjectAttribute for Rating
+                The title is the label, text is the value. We use the
+                formatRating formatter to round the decimal value.
+                -->
+                <ObjectAttribute
+                    title="{i18n>rating}"
+                    text="{
+                        path: 'Rating',
+                        formatter: '.formatter.formatRating'
+                    }"
+                />
+
+                <!--
+                [INTERMEDIATE] EXPRESSION BINDING FOR REVIEW COUNT
+                ====================================================
+                We use expression binding to create a dynamic string:
+                  text="{= ${ReviewCount} + ' reviews'}"
+
+                This concatenates the ReviewCount value with static text.
+                  ReviewCount = 42 → "42 reviews"
+
+                [BEST PRACTICE] In production, use i18n with placeholder:
+                  text="{
+                    parts: [{path: 'i18n>reviews'}, {path: 'ReviewCount'}],
+                    formatter: '.formatter.formatReviewCount'
+                  }"
+                Or use the i18n key with placeholder: reviews=Reviews ({0})
+                -->
+                <ObjectAttribute
+                    title=""
+                    text="{= ${ReviewCount} + ' reviews'}"
+                />
+            </attributes>
+
+            <!--
+            [INTERMEDIATE] OBJECT HEADER STATUSES
+            ====================================================
+            The "statuses" aggregation shows colored status indicators
+            in the header. We show the product's availability status.
+
+            ObjectStatus is used here with the same paired-formatter
+            pattern as in ProductList.view.xml:
+              - formatAvailability  → text ("In Stock", "Low Stock"...)
+              - formatAvailabilityState → color (green, orange, red)
+            -->
+            <statuses>
+                <ObjectStatus
+                    text="{
+                        path: 'Stock',
+                        formatter: '.formatter.formatAvailability'
+                    }"
+                    state="{
+                        path: 'Stock',
+                        formatter: '.formatter.formatAvailabilityState'
+                    }"
+                />
+            </statuses>
+        </ObjectHeader>
+
+        <!--
+        [BEGINNER] THE <IconTabBar> CONTROL — Tabbed Content
+        ====================================================
+        Here we use IconTabBar as a traditional TAB CONTAINER. Each tab
+        has its own content section. Only one tab's content is visible
+        at a time.
+
+        This is the second usage pattern (we used pattern #1 — filter
+        bar — in Home.view.xml):
+          Pattern 1 (Home): Tabs trigger navigation/filtering
+          Pattern 2 (here): Tabs switch between content sections
+
+        class="sapUiNoContentPadding"
+          [INTERMEDIATE] Removes the default padding around the tab
+          content area. We add our own padding on individual content
+          controls for more precise layout control.
+
+        select=".onTabSelect"
+          [INTERMEDIATE] Fires when the user switches tabs. Useful for
+          lazy loading tab content — you might only fetch review data
+          when the user clicks the "Reviews" tab, saving an API call
+          if they never look at reviews.
+        -->
+        <IconTabBar
+            id="detailTabBar"
+            class="sapUiNoContentPadding"
+        >
+            <items>
+                <!--
+                [BEGINNER] DESCRIPTION TAB
+                ====================================================
+                IconTabFilter with text and icon. The content inside
+                this filter is shown when the tab is selected.
+
+                key="description"
+                  Unique identifier for this tab. Used in the select
+                  event to identify which tab was clicked.
+                -->
+                <IconTabFilter
+                    key="description"
+                    text="{i18n>description}"
+                    icon="sap-icon://hint"
+                >
+                    <!--
+                    [BEGINNER] SIMPLE TEXT CONTENT
+                    The Text control displays the product's description.
+                    We wrap it in a VBox with margins for nice spacing.
+
+                    [BEST PRACTICE] Use class="sapUiSmallMargin" on
+                    content wrappers, not on the tab itself. This gives
+                    consistent spacing inside tabs and allows the tab
+                    bar to extend full-width.
+                    -->
+                    <VBox class="sapUiSmallMargin">
+                        <Text text="{Description}" />
+                    </VBox>
+                </IconTabFilter>
+
+                <!--
+                [INTERMEDIATE] SPECIFICATIONS TAB
+                ====================================================
+                Shows product specifications as a list of key-value pairs.
+                In a real app, specifications might come from a separate
+                OData navigation property (e.g., /Products('P001')/Specs).
+                For now, we show some hardcoded spec attributes.
+                -->
+                <IconTabFilter
+                    key="specifications"
+                    text="{i18n>specifications}"
+                    icon="sap-icon://action-settings"
+                >
+                    <VBox class="sapUiSmallMargin">
+                        <!--
+                        [INTERMEDIATE] THE <List> WITH ITEMS
+                        ====================================================
+                        Here we use a List NOT bound to a model — instead
+                        we manually define each item. This is useful for
+                        static or semi-static content.
+
+                        headerText
+                          The list header, shown at the top of the list.
+
+                        [INTERMEDIATE] DisplayListItem — Read-Only Key/Value
+                        sap.m.DisplayListItem shows a label and a value.
+                        It's read-only (not editable) and designed for
+                        displaying specification-like data.
+
+                        label: The left-side text (spec name)
+                        value: The right-side text (spec value)
+
+                        The value is bound to model properties using
+                        relative paths, resolved through the element
+                        binding set on the page.
+                        -->
+                        <List headerText="{i18n>specifications}">
+                            <DisplayListItem label="Product ID" value="{ProductId}" />
+                            <DisplayListItem label="Category" value="{CategoryId}" />
+                            <DisplayListItem
+                                label="Price"
+                                value="{
+                                    path: 'Price',
+                                    formatter: '.formatter.formatPrice'
+                                }"
+                            />
+                            <DisplayListItem label="Stock" value="{Stock}" />
+                            <DisplayListItem
+                                label="Rating"
+                                value="{
+                                    path: 'Rating',
+                                    formatter: '.formatter.formatRating'
+                                }"
+                            />
+                        </List>
+                    </VBox>
+                </IconTabFilter>
+
+                <!--
+                [INTERMEDIATE] REVIEWS TAB (Placeholder)
+                ====================================================
+                This tab would normally display customer reviews. In
+                a full implementation, it would:
+                  1. Bind to a /Products('P001')/Reviews navigation property
+                  2. Show a FeedListItem for each review
+                  3. Include a FeedInput for posting new reviews
+
+                For now, it's a placeholder with an IllustratedMessage.
+
+                count="{ReviewCount}"
+                  [INTERMEDIATE] Shows the review count as a badge on
+                  the tab header. The count property accepts a string.
+                  Example: "Reviews (42)"
+                -->
+                <IconTabFilter
+                    key="reviews"
+                    text="{i18n>reviews}"
+                    icon="sap-icon://comment"
+                    count="{ReviewCount}"
+                >
+                    <VBox
+                        class="sapUiSmallMargin"
+                        alignItems="Center"
+                    >
+                        <IllustratedMessage
+                            illustrationType="sapIllus-NoData"
+                            title="No Reviews Yet"
+                            description="Be the first to review this product"
+                        />
+                    </VBox>
+                </IconTabFilter>
+            </items>
+        </IconTabBar>
+
+        <!--
+        [BEGINNER] PAGE FOOTER — Add to Cart Action Area
+        ====================================================
+        The Page's "footer" aggregation renders a bar at the BOTTOM of
+        the page. It stays fixed while the content scrolls. This is the
+        standard location for page-level actions in Fiori apps.
+
+        [BEST PRACTICE] FOOTER PLACEMENT FOR ACTIONS
+        Primary actions (Add to Cart, Save, Submit) should go in the
+        footer, NOT in the header or inline. Reasons:
+          - On mobile, the footer is near the user's thumb (easy to tap)
+          - It's always visible regardless of scroll position
+          - It follows Fiori design guidelines
+          - Users expect actions at the bottom (like mobile app patterns)
+        -->
+        <footer>
+            <!--
+            [BEGINNER] <Toolbar> FOR FOOTER LAYOUT
+            The footer aggregation expects a Toolbar or Bar control
+            that holds the action controls.
+
+            [INTERMEDIATE] THE <FlexBox> CONTROL
+            ====================================================
+            sap.m.FlexBox provides CSS Flexbox layout capabilities.
+            Unlike VBox/HBox which are simplified flexbox wrappers,
+            FlexBox gives you full control:
+              - alignItems: Vertical alignment of children
+              - justifyContent: Horizontal distribution
+              - direction: Row or Column
+              - wrap: Whether items wrap to the next line
+
+            alignItems="Center"
+              Vertically center all children (StepInput and Button
+              are aligned on their midlines).
+
+            [ADVANCED] FlexBox vs. HBox
+            HBox is a shortcut for FlexBox with direction="Row".
+            Use FlexBox when you need justifyContent, wrap, or other
+            advanced flex properties. Use HBox for simple side-by-side.
+            -->
+            <Toolbar>
+                <ToolbarSpacer />
+
+                <!--
+                [INTERMEDIATE] THE <StepInput> CONTROL
+                ====================================================
+                sap.m.StepInput is a numeric input with +/- buttons.
+                It's perfect for quantity selection.
+
+                id="quantityInput"
+                  Used by the controller to read the selected quantity.
+
+                value="1"
+                  Default quantity. The user starts with 1 and can
+                  increment/decrement.
+
+                min="1"
+                  Minimum value. You can't add 0 items to cart.
+
+                max="{Stock}"
+                  [INTERMEDIATE] DYNAMIC MAX VALUE!
+                  The maximum is bound to the product's Stock count.
+                  If only 3 items are in stock, the user can select
+                  1, 2, or 3 — not more.
+
+                  This is a great example of data binding driving UI
+                  behavior: the model data (Stock) directly controls
+                  the StepInput's constraints.
+
+                step="1"
+                  Increment/decrement by 1 when pressing +/-.
+
+                width="8rem"
+                  Fixed width to prevent the input from stretching.
+
+                [ADVANCED] StepInput VALIDATION
+                StepInput automatically validates:
+                  - Rejects non-numeric input
+                  - Clamps values to min/max range
+                  - Shows error state for invalid values
+                  - Fires "change" event only for valid values
+                -->
+                <StepInput
+                    id="quantityInput"
+                    value="1"
+                    min="1"
+                    max="{Stock}"
+                    step="1"
+                    width="8rem"
+                    description="{i18n>quantity}"
+                />
+
+                <!--
+                [BEGINNER] ADD TO CART BUTTON
+                ====================================================
+                type="Emphasized"
+                  Primary action button (stands out visually).
+
+                icon="sap-icon://cart"
+                  Cart icon before the text. Buttons can have both
+                  icon and text, or just one.
+
+                press=".onAddToCart"
+                  Calls the controller method that:
+                    1. Reads the current product from the binding context
+                    2. Reads the quantity from the StepInput
+                    3. Adds the item to the cart model
+                    4. Shows a MessageToast confirmation
+
+                enabled="{= ${Stock} > 0}"
+                  [INTERMEDIATE] EXPRESSION BINDING FOR ENABLED STATE
+                  The button is only enabled if Stock > 0. If the
+                  product is out of stock, the button is greyed out
+                  and not clickable.
+
+                  Expression binding syntax: {= expression }
+                  Inside the expression, ${Stock} reads the Stock
+                  property from the model. The $ prefix is required
+                  inside expressions to reference model properties.
+
+                  This is a perfect use case for expression binding:
+                  a simple boolean derived from one model property.
+                -->
+                <Button
+                    text="{i18n>addToCart}"
+                    type="Emphasized"
+                    icon="sap-icon://cart"
+                    press=".onAddToCart"
+                    enabled="{= ${Stock} > 0}"
+                />
+            </Toolbar>
+        </footer>
+
+    </Page>
+
+</mvc:View>

@@ -1,0 +1,483 @@
+<!--
+========================================================================
+FILE: Cart.view.xml — Shopping Cart Page
+NAMESPACE: com.shopeasy.app.view
+========================================================================
+
+[BEGINNER] WHAT IS THIS VIEW?
+The shopping cart page shows all items the user has added. It features:
+  1. An empty state with IllustratedMessage when the cart is empty
+  2. A list of cart items with images, names, prices, and quantities
+  3. A footer with total price and "Proceed to Checkout" button
+
+[INTERMEDIATE] KEY CONCEPTS DEMONSTRATED:
+  - Expression binding for conditional visibility
+  - Binding to a NAMED model (cart>)
+  - CustomListItem for fully custom list item layouts
+  - HBox/VBox for flexible layouts within list items
+  - IllustratedMessage for empty states
+  - Footer Toolbar with dynamic content
+
+[ADVANCED] WORKING WITH THE CART JSONModel
+The cart model is a JSONModel declared in manifest.json with structure:
+  {
+    items: [
+      { productId: "P001", name: "Mouse", price: 29.99, quantity: 2, imageUrl: "..." },
+      { productId: "P002", name: "Keyboard", price: 79.99, quantity: 1, imageUrl: "..." }
+    ],
+    totalPrice: 139.97,
+    itemCount: 3,
+    currency: "USD"
+  }
+
+All bindings in this view use the "cart>" prefix to read from
+this named model instead of the default OData model.
+
+Learn more: docs/03-data-binding.md, docs/04-models.md
+========================================================================
+-->
+
+<mvc:View
+    controllerName="com.shopeasy.app.controller.Cart"
+    xmlns="sap.m"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns:core="sap.ui.core"
+>
+    <Page
+        id="cartPage"
+        title="{i18n>cartTitle}"
+        showNavButton="true"
+        navButtonPress=".onNavBack"
+    >
+        <!--
+        [INTERMEDIATE] CONDITIONAL VISIBILITY WITH EXPRESSION BINDING
+        ====================================================
+        We show TWO different sections based on whether the cart has items:
+          1. Empty state (IllustratedMessage) → visible when itemCount === 0
+          2. Cart content (List) → visible when itemCount > 0
+
+        This is achieved with EXPRESSION BINDING on the "visible" property.
+
+        visible="{= ${cart>/itemCount} === 0}"
+          Breaking it down:
+            {= ... }              → Expression binding delimiters
+            ${cart>/itemCount}     → Read "itemCount" from the "cart" model
+                                     The $ prefix is required inside expressions
+            === 0                  → JavaScript strict equality comparison
+
+          When itemCount is 0: expression evaluates to true → visible
+          When itemCount is 3: expression evaluates to false → hidden
+
+        [ADVANCED] EXPRESSION BINDING vs. FORMATTER FOR VISIBILITY
+        For simple boolean conditions like "is it zero?", expression
+        binding is ideal — it's concise and readable inline.
+
+        For complex conditions (like "show if user is admin AND stock > 0
+        AND sale is active"), use a formatter function — it's easier to
+        debug and test.
+
+        [GOTCHA] When a control is visible="false", it's still in the DOM
+        but hidden with display:none. The bindings are still ACTIVE.
+        For performance with heavy content, consider using the
+        "visible" binding on a parent container, or lazy-load content
+        only when it becomes visible.
+
+        [BEST PRACTICE] EMPTY STATES
+        Always provide an empty state message. A blank page makes users
+        think the app is broken. Good empty states:
+          1. Explain WHY it's empty ("Your cart is empty")
+          2. Suggest WHAT to do ("Start shopping to add items")
+          3. Provide a CTA button ("Continue Shopping")
+        -->
+
+        <!-- ===== EMPTY CART STATE ===== -->
+        <VBox
+            visible="{= ${cart>/itemCount} === 0}"
+            alignItems="Center"
+            justifyContent="Center"
+            class="sapUiMediumMargin"
+        >
+            <!--
+            [BEGINNER] THE <IllustratedMessage> CONTROL — Empty State
+            ====================================================
+            sap.m.IllustratedMessage displays a professional SVG
+            illustration with a title and description. It's the
+            SAP Fiori standard for empty, error, and success states.
+
+            illustrationType="sapIllus-EmptyList"
+              [INTERMEDIATE] SAP provides many built-in illustration types:
+                - sapIllus-EmptyList          → Empty list/collection
+                - sapIllus-NoSearchResults    → Search returned nothing
+                - sapIllus-NoData             → No data available
+                - sapIllus-ErrorScreen        → Something went wrong
+                - sapIllus-SuccessScreen      → Operation succeeded
+                - sapIllus-SimpleBalloon      → General informational
+                - sapIllus-Tent              → Under construction
+                - sapIllus-NoMail           → No messages
+
+              These illustrations follow SAP's visual language and
+              automatically adapt to the current theme (Horizon, Quartz).
+
+            title="{i18n>emptyCart}"
+              Main heading: "Your cart is empty"
+
+            description="{i18n>emptyCartMessage}"
+              Supporting text: "Start shopping to add items to your cart"
+
+            [BEST PRACTICE] The illustration, title, description, and
+            CTA button together form a complete "empty state pattern":
+              🖼  [Illustration]      ← Visual empathy
+              📝  Your cart is empty  ← What happened
+              💬  Start shopping...   ← What to do
+              🔘  [Continue Shopping] ← Action to take
+            -->
+            <IllustratedMessage
+                illustrationType="sapIllus-EmptyList"
+                title="{i18n>emptyCart}"
+                description="{i18n>emptyCartMessage}"
+            >
+                <additionalContent>
+                    <!--
+                    [BEGINNER] CTA BUTTON TO CONTINUE SHOPPING
+                    ====================================================
+                    press=".onContinueShopping"
+                      Navigates back to the Home page so the user can
+                      browse categories and add products.
+
+                    type="Emphasized"
+                      Primary action button styling. This is the only
+                      emphasized button on the empty state, guiding the
+                      user's eye to the most important action.
+                    -->
+                    <Button
+                        text="{i18n>continueShopping}"
+                        type="Emphasized"
+                        press=".onContinueShopping"
+                    />
+                </additionalContent>
+            </IllustratedMessage>
+        </VBox>
+
+        <!-- ===== CART ITEMS LIST ===== -->
+        <!--
+        [INTERMEDIATE] CART LIST — VISIBLE ONLY WHEN ITEMS EXIST
+        ====================================================
+        visible="{= ${cart>/itemCount} > 0}"
+          The opposite of the empty state visibility. When there ARE
+          items, this list shows and the empty state hides.
+
+          [ADVANCED] An alternative approach is to use a single container
+          with a content switch, but the dual-visibility approach is
+          simpler and more readable in XML views.
+
+        items="{cart>/items}"
+          [BEGINNER] BINDING TO A NAMED MODEL
+          This is aggregation binding on the CART model (not the default
+          OData model). The "cart>" prefix tells UI5 to use the model
+          named "cart":
+            - cart>   → Model name prefix (the JSONModel from manifest.json)
+            - /items  → Path within that model (the items array)
+
+          Compare with the ProductList binding:
+            items="{/Products}"     → Default (unnamed) OData model
+            items="{cart>/items}"   → Named "cart" JSONModel
+
+          For each object in the items array, UI5 creates one
+          CustomListItem using the template below.
+
+        [INTERMEDIATE] List WITH CustomListItem
+        Unlike ObjectListItem (used in ProductList) which has predefined
+        layout slots, CustomListItem lets you build the ENTIRE layout
+        from scratch using any UI5 controls.
+
+        Use CustomListItem when:
+          - The predefined list item types don't match your design
+          - You need complex layouts (multiple rows, images, nested controls)
+          - You need full control over positioning
+
+        Use ObjectListItem when:
+          - Your data fits the object pattern (title, number, attributes)
+          - You want consistency with other SAP apps
+          - You want responsive layout handled automatically
+        -->
+        <List
+            id="cartList"
+            visible="{= ${cart>/itemCount} > 0}"
+            items="{cart>/items}"
+            noDataText="{i18n>emptyCart}"
+            headerText="{i18n>cartTitle}"
+        >
+            <!--
+            [INTERMEDIATE] THE <CustomListItem> CONTROL
+            ====================================================
+            sap.m.CustomListItem is a blank-canvas list item. You
+            fill it with whatever controls you want, giving you
+            complete layout freedom.
+
+            type="Inactive"
+              [BEGINNER] Since cart items aren't navigational (they
+              don't lead to a detail page from the cart), we use
+              "Inactive" type. No press highlight, no chevron.
+
+            [ADVANCED] CUSTOM LIST ITEM LIFECYCLE
+            Each CustomListItem instance is managed by the List's
+            binding. When an item is added to cart>/items, a new
+            CustomListItem is created from this template. When an
+            item is removed, the corresponding CustomListItem is
+            destroyed. The List handles all of this automatically.
+            -->
+            <CustomListItem type="Inactive">
+                <!--
+                [BEGINNER] <HBox> — Horizontal Layout
+                ====================================================
+                sap.m.HBox arranges children horizontally (side by side).
+                It's the UI5 equivalent of CSS flex-direction: row.
+
+                Layout structure of each cart item:
+                ┌──────────────────────────────────────────────────┐
+                │ [Image]  [Name & Price column]  [Qty] [Delete]  │
+                └──────────────────────────────────────────────────┘
+
+                alignItems="Center"
+                  Vertically centers all children on their midlines.
+                  Without this, taller elements (image) and shorter
+                  elements (text) would align to the top.
+
+                class="sapUiSmallMargin"
+                  Adds consistent spacing around the HBox.
+
+                width="100%"
+                  Ensures the HBox stretches to fill the list item width.
+                -->
+                <HBox
+                    alignItems="Center"
+                    class="sapUiSmallMargin"
+                    width="100%"
+                >
+                    <!--
+                    [INTERMEDIATE] THE <Image> CONTROL — Product Thumbnail
+                    ====================================================
+                    sap.m.Image renders an <img> element with additional
+                    UI5 features like density-aware image switching and
+                    decorative mode for accessibility.
+
+                    src="{cart>imageUrl}"
+                      The image URL from the cart item data. Note the
+                      "cart>" prefix — we're still in the cart model context.
+
+                    width="4rem" / height="4rem"
+                      Fixed dimensions for the thumbnail. Using rem units
+                      ensures the size scales with the user's font size
+                      settings (accessibility benefit).
+
+                    decorative="true"
+                      [ADVANCED] ACCESSIBILITY: When true, the image is
+                      treated as decorative (not informational). Screen
+                      readers will skip it. Use decorative="true" when
+                      the image doesn't convey information beyond what's
+                      already in the text (product name). Set to false
+                      and add alt text for informational images.
+
+                    class="sapUiSmallMarginEnd"
+                      Adds margin on the END side (right in LTR, left in RTL).
+                      Using "End" instead of "Right" supports RTL languages.
+                    -->
+                    <Image
+                        src="{cart>imageUrl}"
+                        width="4rem"
+                        height="4rem"
+                        decorative="true"
+                        class="sapUiSmallMarginEnd"
+                    />
+
+                    <!--
+                    [BEGINNER] <VBox> FOR PRODUCT NAME AND PRICE
+                    ====================================================
+                    Nesting a VBox inside the HBox creates a two-line
+                    text block: product name on top, price below.
+
+                    Layout:
+                    ┌─────────────────────┐
+                    │ Wireless Mouse      │  ← Title (Name)
+                    │ $29.99              │  ← Text (Price)
+                    └─────────────────────┘
+
+                    [INTERMEDIATE] FLEXBOX GROW
+                    The VBox has no explicit width, so it will shrink-wrap
+                    its content. The ToolbarSpacer-like behavior comes from
+                    the HBox's flex layout — the VBox takes available space
+                    between the image and the action controls.
+                    -->
+                    <VBox class="sapUiSmallMarginEnd">
+                        <!--
+                        [BEGINNER] RELATIVE BINDINGS TO CART MODEL
+                        These bindings use "cart>" prefix with relative paths.
+                        Since we're inside items="{cart>/items}", each
+                        CustomListItem gets a context like "cart>/items/0".
+                        So {cart>name} resolves to "cart>/items/0/name"
+                        for the first item.
+                        -->
+                        <Title text="{cart>name}" level="H4" />
+
+                        <Text
+                            text="{
+                                path: 'cart>price',
+                                formatter: '.formatter.formatPrice'
+                            }"
+                        />
+                    </VBox>
+
+                    <!--
+                    [INTERMEDIATE] ToolbarSpacer IN A NON-TOOLBAR CONTEXT
+                    ====================================================
+                    ToolbarSpacer only works inside Toolbar/OverflowToolbar.
+                    For FlexBox/HBox spacing, we use a FlexBox with
+                    renderType="Bare" and layoutData, or simply use
+                    CSS margins. Here, we rely on the natural flex layout
+                    and margin classes to space items.
+                    -->
+
+                    <!--
+                    [BEGINNER] QUANTITY DISPLAY
+                    ====================================================
+                    A simple Text control showing the quantity, wrapped
+                    in an ObjectNumber for a more semantic display with
+                    a label.
+                    -->
+                    <ObjectNumber
+                        number="{cart>quantity}"
+                        unit="{i18n>quantity}"
+                        class="sapUiSmallMarginEnd"
+                    />
+
+                    <!--
+                    [BEGINNER] DELETE BUTTON — Remove Item from Cart
+                    ====================================================
+                    icon="sap-icon://decline"
+                      The "X" icon, standard for delete/remove actions.
+
+                    type="Reject"
+                      [INTERMEDIATE] Red-tinted button styling that
+                      signals a destructive action (removing an item).
+                      This visual cue helps prevent accidental deletions.
+
+                    press=".onDeleteItem"
+                      [INTERMEDIATE] The controller's delete handler:
+                        1. Gets the binding context of the pressed button
+                        2. Finds the index of the item in the cart array
+                        3. Removes it from the cart model
+                        4. Recalculates totalPrice and itemCount
+                        5. Shows a MessageToast confirmation
+
+                    [ADVANCED] IDENTIFYING WHICH ITEM TO DELETE
+                    In the controller, the event source (button) has a
+                    binding context that tells us which item it belongs to:
+
+                      onDeleteItem: function(oEvent) {
+                        var oCtx = oEvent.getSource().getBindingContext("cart");
+                        var sPath = oCtx.getPath();  // e.g., "/items/2"
+                        var iIndex = parseInt(sPath.split("/").pop());
+                        // Remove item at index from the cart model
+                      }
+                    -->
+                    <Button
+                        icon="sap-icon://decline"
+                        type="Reject"
+                        press=".onDeleteItem"
+                        tooltip="{i18n>removeFromCart}"
+                    />
+                </HBox>
+            </CustomListItem>
+        </List>
+
+        <!--
+        [BEGINNER] PAGE FOOTER — Total Price and Checkout Button
+        ====================================================
+        The footer bar stays fixed at the bottom of the page. It shows:
+          - Total price of all cart items
+          - "Proceed to Checkout" button
+
+        visible="{= ${cart>/itemCount} > 0}"
+          Only show the footer when there are items in the cart.
+          When the cart is empty, the footer hides — the user sees
+          only the IllustratedMessage empty state.
+
+        [INTERMEDIATE] FOOTER TOOLBAR LAYOUT
+        Using ToolbarSpacer pushes the checkout button to the right:
+          [  Total: $127.50          [Proceed to Checkout]  ]
+        -->
+        <footer>
+            <Toolbar visible="{= ${cart>/itemCount} > 0}">
+
+                <!--
+                [INTERMEDIATE] TOTAL PRICE DISPLAY
+                ====================================================
+                ObjectNumber is used for a nicely formatted price display.
+
+                number="{cart>/totalPrice}"
+                  Bound to the totalPrice property of the cart model.
+                  This value is maintained by the cart.js module,
+                  which recalculates it whenever items are added/removed.
+
+                unit="{cart>/currency}"
+                  Currency from the cart model (e.g., "USD").
+
+                emphasized="true"
+                  [INTERMEDIATE] Makes the number stand out with bolder
+                  styling. Use for the most important numeric value
+                  on the page (in this case, the total price).
+
+                [ADVANCED] ALTERNATIVE: Using formatPrice FORMATTER
+                You could also format the price with a formatter:
+                  number="{
+                    path: 'cart>/totalPrice',
+                    formatter: '.formatter.formatPrice'
+                  }"
+                But since ObjectNumber already handles number formatting,
+                we keep it simple and let the control do the formatting.
+                -->
+                <Title
+                    text="{i18n>total}:"
+                    level="H4"
+                />
+                <ObjectNumber
+                    number="{
+                        path: 'cart>/totalPrice',
+                        formatter: '.formatter.formatPrice'
+                    }"
+                    unit="{cart>/currency}"
+                    emphasized="true"
+                />
+
+                <ToolbarSpacer />
+
+                <!--
+                [BEGINNER] PROCEED TO CHECKOUT BUTTON
+                ====================================================
+                press=".onProceedToCheckout"
+                  The controller navigates to the "checkout" route:
+                    this.getRouter().navTo("checkout");
+
+                type="Emphasized"
+                  Primary action — visually prominent.
+
+                icon="sap-icon://cart"
+                  Cart icon reinforces the action's context.
+
+                [BEST PRACTICE] SINGLE PRIMARY ACTION
+                There's only ONE emphasized button in the footer.
+                Fiori guidelines say each page should have at most
+                one primary (emphasized) action to guide the user.
+                -->
+                <Button
+                    text="{i18n>proceedToCheckout}"
+                    type="Emphasized"
+                    icon="sap-icon://cart"
+                    press=".onProceedToCheckout"
+                />
+            </Toolbar>
+        </footer>
+
+    </Page>
+
+</mvc:View>

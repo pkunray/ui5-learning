@@ -1,0 +1,242 @@
+[
+  {
+    "ProductId": "PROD001",
+    "Name": "Wireless Noise-Cancelling Headphones",
+    "Description": "Premium over-ear headphones with active noise cancellation, 30-hour battery life, and crystal-clear sound quality. Perfect for music lovers and remote workers.",
+    "Price": 249.99,
+    "Currency": "USD",
+    "CategoryId": "CAT001",
+    "ImageUrl": "img/product1.jpg",
+    "Stock": 45,
+    "Rating": 4.7,
+    "ReviewCount": 328,
+    "Specifications": {
+      "Weight": "250g",
+      "Dimensions": "18 x 17 x 8 cm",
+      "Material": "Protein leather, Aluminum",
+      "BatteryLife": "30 hours",
+      "Connectivity": "Bluetooth 5.2",
+      "Driver": "40mm"
+    }
+  },
+  {
+    "ProductId": "PROD002",
+    "Name": "Ultra-Slim Laptop 14\"",
+    "Description": "Lightweight 14-inch laptop with a stunning 2K display, 16GB RAM, and 512GB SSD. Ideal for professionals on the go.",
+    "Price": 1099.00,
+    "Currency": "USD",
+    "CategoryId": "CAT001",
+    "ImageUrl": "img/product2.jpg",
+    "Stock": 12,
+    "Rating": 4.5,
+    "ReviewCount": 189,
+    "Specifications": {
+      "Weight": "1.3kg",
+      "Dimensions": "32 x 22 x 1.5 cm",
+      "Material": "Aluminum alloy",
+      "Processor": "Intel Core i7-13700H",
+      "RAM": "16GB DDR5",
+      "Storage": "512GB NVMe SSD"
+    }
+  },
+  {
+    "ProductId": "PROD003",
+    "Name": "Smartwatch Pro",
+    "Description": "Feature-packed smartwatch with heart rate monitoring, GPS tracking, sleep analysis, and a bright AMOLED display. Water-resistant to 50m.",
+    "Price": 349.99,
+    "Currency": "USD",
+    "CategoryId": "CAT001",
+    "ImageUrl": "img/product3.jpg",
+    "Stock": 67,
+    "Rating": 4.3,
+    "ReviewCount": 412,
+    "Specifications": {
+      "Weight": "45g",
+      "Dimensions": "44mm case",
+      "Material": "Titanium, Sapphire glass",
+      "BatteryLife": "7 days",
+      "WaterResistance": "50m (5 ATM)",
+      "Display": "1.4\" AMOLED"
+    }
+  },
+  {
+    "ProductId": "PROD004",
+    "Name": "Classic Denim Jacket",
+    "Description": "Timeless medium-wash denim jacket with a modern slim fit. Features copper-tone buttons, two chest pockets, and adjustable waist tabs.",
+    "Price": 89.99,
+    "Currency": "USD",
+    "CategoryId": "CAT002",
+    "ImageUrl": "img/product4.jpg",
+    "Stock": 150,
+    "Rating": 4.4,
+    "ReviewCount": 95,
+    "Specifications": {
+      "Weight": "680g",
+      "Material": "100% Cotton denim",
+      "Fit": "Slim",
+      "Care": "Machine wash cold",
+      "Closure": "Button front",
+      "Sizes": "XS, S, M, L, XL, XXL"
+    }
+  },
+  {
+    "ProductId": "PROD005",
+    "Name": "Performance Running Shoes",
+    "Description": "Lightweight running shoes with responsive cushioning, breathable mesh upper, and durable rubber outsole. Designed for daily training.",
+    "Price": 129.99,
+    "Currency": "USD",
+    "CategoryId": "CAT002",
+    "ImageUrl": "img/product5.jpg",
+    "Stock": 3,
+    "Rating": 4.6,
+    "ReviewCount": 247,
+    "Specifications": {
+      "Weight": "280g (size 10)",
+      "Material": "Engineered mesh, EVA foam",
+      "Drop": "8mm",
+      "Cushioning": "Responsive foam",
+      "Outsole": "Rubber with flex grooves",
+      "Sizes": "6-14 (US)"
+    }
+  },
+  {
+    "ProductId": "PROD006",
+    "Name": "Merino Wool Sweater",
+    "Description": "Luxuriously soft crew-neck sweater crafted from 100% Australian merino wool. Naturally temperature-regulating and odor-resistant.",
+    "Price": 119.00,
+    "Currency": "USD",
+    "CategoryId": "CAT002",
+    "ImageUrl": "img/product6.jpg",
+    "Stock": 78,
+    "Rating": 4.8,
+    "ReviewCount": 63,
+    "Specifications": {
+      "Weight": "320g",
+      "Material": "100% Merino wool (18.5 micron)",
+      "Fit": "Regular",
+      "Care": "Hand wash or dry clean",
+      "Neckline": "Crew neck",
+      "Sizes": "XS, S, M, L, XL"
+    }
+  },
+  {
+    "ProductId": "PROD007",
+    "Name": "Ceramic Plant Pot Set (3-Pack)",
+    "Description": "Set of three handcrafted ceramic pots in graduated sizes with matching saucers. Drainage holes included. Perfect for succulents and herbs.",
+    "Price": 44.99,
+    "Currency": "USD",
+    "CategoryId": "CAT003",
+    "ImageUrl": "img/product7.jpg",
+    "Stock": 200,
+    "Rating": 4.2,
+    "ReviewCount": 156,
+    "Specifications": {
+      "Weight": "2.1kg (total)",
+      "Dimensions": "10cm / 13cm / 16cm diameter",
+      "Material": "Glazed ceramic",
+      "Color": "Matte white",
+      "Includes": "3 pots, 3 saucers",
+      "DrainageHoles": "Yes"
+    }
+  },
+  {
+    "ProductId": "PROD008",
+    "Name": "LED Desk Lamp with Wireless Charger",
+    "Description": "Modern desk lamp with adjustable color temperature (3000K-6500K), five brightness levels, and a built-in 10W Qi wireless charging pad.",
+    "Price": 59.99,
+    "Currency": "USD",
+    "CategoryId": "CAT003",
+    "ImageUrl": "img/product8.jpg",
+    "Stock": 0,
+    "Rating": 4.1,
+    "ReviewCount": 84,
+    "Specifications": {
+      "Weight": "850g",
+      "Dimensions": "40 x 12 x 40 cm (extended)",
+      "Material": "Aluminum, ABS plastic",
+      "Power": "12W LED",
+      "ColorTemperature": "3000K - 6500K",
+      "ChargingOutput": "10W Qi wireless"
+    }
+  },
+  {
+    "ProductId": "PROD009",
+    "Name": "Organic Cotton Bed Sheet Set",
+    "Description": "400-thread-count organic cotton sheet set including fitted sheet, flat sheet, and two pillowcases. GOTS certified, incredibly soft.",
+    "Price": 79.99,
+    "Currency": "USD",
+    "CategoryId": "CAT003",
+    "ImageUrl": "img/product9.jpg",
+    "Stock": 55,
+    "Rating": 4.6,
+    "ReviewCount": 203,
+    "Specifications": {
+      "Weight": "1.8kg",
+      "Material": "100% GOTS-certified organic cotton",
+      "ThreadCount": "400",
+      "Size": "Queen (fits 60x80\" mattress)",
+      "Includes": "1 fitted sheet, 1 flat sheet, 2 pillowcases",
+      "Care": "Machine wash warm"
+    }
+  },
+  {
+    "ProductId": "PROD010",
+    "Name": "Clean Code: A Handbook of Agile Software Craftsmanship",
+    "Description": "Robert C. Martin's classic guide to writing clean, maintainable code. A must-read for every software developer, from beginners to seasoned professionals.",
+    "Price": 34.99,
+    "Currency": "USD",
+    "CategoryId": "CAT004",
+    "ImageUrl": "img/product10.jpg",
+    "Stock": 500,
+    "Rating": 4.7,
+    "ReviewCount": 1024,
+    "Specifications": {
+      "Weight": "540g",
+      "Dimensions": "23.4 x 17.5 x 2.5 cm",
+      "Material": "Paper",
+      "Pages": "464",
+      "Publisher": "Prentice Hall",
+      "Language": "English"
+    }
+  },
+  {
+    "ProductId": "PROD011",
+    "Name": "The Design of Everyday Things",
+    "Description": "Don Norman's seminal work on human-centered design. Learn why some products satisfy customers while others frustrate them. Revised and expanded edition.",
+    "Price": 19.99,
+    "Currency": "USD",
+    "CategoryId": "CAT004",
+    "ImageUrl": "img/product11.jpg",
+    "Stock": 320,
+    "Rating": 4.5,
+    "ReviewCount": 876,
+    "Specifications": {
+      "Weight": "350g",
+      "Dimensions": "20.3 x 13.3 x 2 cm",
+      "Material": "Paper",
+      "Pages": "368",
+      "Publisher": "Basic Books",
+      "Language": "English"
+    }
+  },
+  {
+    "ProductId": "PROD012",
+    "Name": "Portable Bluetooth Speaker",
+    "Description": "Compact waterproof speaker with 360-degree sound, deep bass, and 12-hour battery life. Pairs easily with any device. Great for outdoor adventures.",
+    "Price": 69.99,
+    "Currency": "USD",
+    "CategoryId": "CAT001",
+    "ImageUrl": "img/product12.jpg",
+    "Stock": 88,
+    "Rating": 4.4,
+    "ReviewCount": 531,
+    "Specifications": {
+      "Weight": "560g",
+      "Dimensions": "7.4 x 7.4 x 18 cm",
+      "Material": "Rubberized fabric, Silicone",
+      "BatteryLife": "12 hours",
+      "WaterResistance": "IP67",
+      "Connectivity": "Bluetooth 5.3"
+    }
+  }
+]

@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  ========================================================================
+  OData V2 Metadata Document (EDMX)
+  ========================================================================
+
+  WHAT IS THIS FILE?
+  ==================
+  This is the "metadata document" for our OData V2 service. It describes
+  the structure of the data our service exposes — like a schema or API spec.
+
+  In a real SAP system (e.g., SAP S/4HANA or SAP Gateway), this file is
+  auto-generated from ABAP backend definitions (SEGW transaction). For
+  local development with MockServer, we create it manually.
+
+  When the UI5 OData model is initialized, it fetches this document from
+  the service URL + "$metadata" (e.g., /sap/opu/odata/sap/SHOP_SRV/$metadata)
+  to understand the data structure before making any data requests.
+
+  KEY CONCEPTS
+  ============
+
+  1. NAMESPACE (SHOP_SRV):
+     Groups all entity types, associations, and functions under a unique
+     name to avoid collisions. In SAP, this often matches the service name.
+
+  2. ENTITY TYPES (Product, Category):
+     Like database tables or TypeScript interfaces. They define the shape
+     of each data record — its fields (Properties) and their data types.
+
+  3. PROPERTIES:
+     Each field on an EntityType. Defined with:
+       - Name: field name (used in OData URLs and binding paths)
+       - Type: Edm.String, Edm.Decimal, Edm.Int32, Edm.Single, etc.
+       - Nullable: whether the field can be null (default: true)
+
+  4. KEYS:
+     One or more Properties marked as <Key> form the unique identifier
+     for each entity. Used in OData URLs: /Products('PROD001')
+
+  5. ASSOCIATIONS & NAVIGATION PROPERTIES:
+     Define relationships between entities (like SQL foreign keys).
+       - Association: declares the relationship and cardinality (1:*, *:1)
+       - NavigationProperty: lets you traverse the relationship in queries
+         Example: /Categories('CAT001')/Products
+
+  6. ENTITY SETS:
+     The "collections" exposed by the service. Each EntitySet maps to an
+     EntityType.  /Products returns a list of Product entities.
+
+  7. ENTITY CONTAINER:
+     Groups all EntitySets and AssociationSets into the service endpoint.
+     There's typically one container per service.
+-->
+
+<edmx:Edmx Version="1.0"
+    xmlns:edmx="http://schemas.microsoft.com/ado/2007/06/edmx">
+
+  <edmx:DataServices m:DataServiceVersion="2.0"
+      xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata">
+
+    <!-- Schema defines all types and the container for namespace SHOP_SRV -->
+    <Schema Namespace="SHOP_SRV"
+        xmlns="http://schemas.microsoft.com/ado/2008/09/edm">
+
+      <!--
+        ================================================================
+        EntityType: Product
+        ================================================================
+        Represents a single product in the shop.
+
+        Each Property has:
+          - Name:     The field name used in JSON payloads and OData URLs
+          - Type:     The OData primitive type (Edm.*)
+          - Nullable: "false" means the field is required
+
+        Common Edm types:
+          Edm.String   = text
+          Edm.Decimal  = precise numbers (prices, currency amounts)
+          Edm.Int32    = 32-bit integer
+          Edm.Single   = single-precision float (ratings)
+      -->
+      <EntityType Name="Product">
+        <Key>
+          <!-- Primary key — uniquely identifies each product -->
+          <PropertyRef Name="ProductId" />
+        </Key>
+
+        <Property Name="ProductId"   Type="Edm.String"  Nullable="false" />
+        <Property Name="Name"        Type="Edm.String"  Nullable="false" />
+        <Property Name="Description" Type="Edm.String" />
+        <Property Name="Price"       Type="Edm.Decimal" Nullable="false" Precision="10" Scale="2" />
+        <Property Name="Currency"    Type="Edm.String"  Nullable="false" MaxLength="3" />
+        <Property Name="CategoryId"  Type="Edm.String"  Nullable="false" />
+        <Property Name="ImageUrl"    Type="Edm.String" />
+        <Property Name="Stock"       Type="Edm.Int32"   Nullable="false" />
+        <Property Name="Rating"      Type="Edm.Single" />
+        <Property Name="ReviewCount" Type="Edm.Int32" />
+
+        <!--
+          NavigationProperty lets you navigate from a Product to its Category.
+          Relationship = the Association name (defined below)
+          FromRole / ToRole = which end of the association this entity is on
+        -->
+        <NavigationProperty
+            Name="Category"
+            Relationship="SHOP_SRV.Category_Products"
+            FromRole="ProductRole"
+            ToRole="CategoryRole" />
+      </EntityType>
+
+
+      <!--
+        ================================================================
+        EntityType: Category
+        ================================================================
+        Represents a product category (e.g., "Electronics", "Books").
+      -->
+      <EntityType Name="Category">
+        <Key>
+          <PropertyRef Name="CategoryId" />
+        </Key>
+
+        <Property Name="CategoryId"   Type="Edm.String"  Nullable="false" />
+        <Property Name="Name"         Type="Edm.String"  Nullable="false" />
+        <Property Name="Description"  Type="Edm.String" />
+        <Property Name="ProductCount" Type="Edm.Int32" />
+        <Property Name="Icon"         Type="Edm.String" />
+
+        <!--
+          NavigationProperty: Category -> Products (one-to-many)
+          Allows queries like:  /Categories('CAT001')/Products
+        -->
+        <NavigationProperty
+            Name="Products"
+            Relationship="SHOP_SRV.Category_Products"
+            FromRole="CategoryRole"
+            ToRole="ProductRole" />
+      </EntityType>
+
+
+      <!--
+        ================================================================
+        Association: Category_Products
+        ================================================================
+        Defines a one-to-many (1:*) relationship between Category and Product.
+
+        - "1" end (CategoryRole): Each product belongs to exactly one category
+        - "*" end (ProductRole):  Each category can have many products
+
+        The ReferentialConstraint (below, in AssociationSet) links
+        Category.CategoryId to Product.CategoryId — like a foreign key.
+      -->
+      <Association Name="Category_Products">
+        <End Type="SHOP_SRV.Category" Multiplicity="1"  Role="CategoryRole" />
+        <End Type="SHOP_SRV.Product"  Multiplicity="*"  Role="ProductRole" />
+
+        <!-- Defines which properties form the foreign key link -->
+        <ReferentialConstraint>
+          <Principal Role="CategoryRole">
+            <PropertyRef Name="CategoryId" />
+          </Principal>
+          <Dependent Role="ProductRole">
+            <PropertyRef Name="CategoryId" />
+          </Dependent>
+        </ReferentialConstraint>
+      </Association>
+
+
+      <!--
+        ================================================================
+        EntityContainer: SHOP_SRV
+        ================================================================
+        The EntityContainer groups all EntitySets (collections) and
+        AssociationSets exposed by this service.
+
+        m:IsDefaultEntityContainer="true" means this is the primary
+        container — required when there's only one (which is typical).
+      -->
+      <EntityContainer Name="SHOP_SRV" m:IsDefaultEntityContainer="true">
+
+        <!--
+          EntitySets are the "endpoints" you can query:
+            GET /Products          -> returns all products
+            GET /Products('PROD001') -> returns one product
+            GET /Categories        -> returns all categories
+        -->
+        <EntitySet Name="Products"   EntityType="SHOP_SRV.Product" />
+        <EntitySet Name="Categories" EntityType="SHOP_SRV.Category" />
+
+        <!--
+          AssociationSet binds the Association to specific EntitySets.
+          This tells the runtime HOW to resolve navigation properties
+          by mapping roles to their corresponding EntitySets.
+        -->
+        <AssociationSet
+            Name="Category_Products_Set"
+            Association="SHOP_SRV.Category_Products">
+          <End EntitySet="Categories" Role="CategoryRole" />
+          <End EntitySet="Products"   Role="ProductRole" />
+        </AssociationSet>
+
+      </EntityContainer>
+
+    </Schema>
+
+  </edmx:DataServices>
+
+</edmx:Edmx>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<!--
+============================================================================
+FILE: opaTests.qunit.html — OPA5 Integration Test Runner Page
+PROJECT: ShopEasy - SAP UI5 Online Shopping Application
+NAMESPACE: com.shopeasy.app
+============================================================================
+
+[BEGINNER] WHAT IS THIS FILE?
+─────────────────────────────
+This is the HTML host page for OPA5 INTEGRATION TESTS. It's structured
+similarly to the unit test HTML page, but it runs a fundamentally
+different type of test:
+
+  UNIT TESTS (unitTests.qunit.html):
+    Test individual functions in isolation.
+    No UI, no DOM, no navigation.
+    Super fast (milliseconds).
+
+  INTEGRATION TESTS (this file):
+    Test the app AS A WHOLE — loading views, clicking buttons,
+    navigating between pages, verifying that data appears correctly.
+    Uses OPA5 to simulate real user interactions.
+    Slower (seconds), but gives confidence the app truly works.
+
+[BEGINNER] WHAT IS OPA5?
+────────────────────────
+OPA5 (One Page Acceptance testing for UI5) is SAP's integration
+testing framework. It lets you write tests that:
+  1. Launch your actual application
+  2. Wait for specific controls to appear
+  3. Interact with them (click, type, scroll)
+  4. Verify the results
+
+Think of it as a lightweight version of Selenium or Cypress,
+but designed specifically for UI5 applications.
+
+[INTERMEDIATE] WHY SEPARATE FROM UNIT TESTS?
+───────────────────────────────────────────
+Integration tests are slower and more complex than unit tests.
+Running them separately allows you to:
+  - Run fast unit tests frequently during development
+  - Run slower integration tests before committing/deploying
+  - Debug test failures in the correct context
+
+[BEST PRACTICE] The test pyramid:
+  Many unit tests (fast, cheap, granular)
+  Some integration tests (medium speed, test user flows)
+  Few E2E tests (slow, expensive, test full deployment)
+============================================================================
+-->
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>ShopEasy — OPA5 Integration Tests</title>
+
+	<!--
+	[BEGINNER] QUnit CSS — same as unit tests.
+	OPA5 uses QUnit as its underlying test runner.
+	-->
+	<link rel="stylesheet" href="https://sdk.openui5.org/resources/sap/ui/thirdparty/qunit-2.css">
+
+	<!--
+	================================================================
+	[BEGINNER] UI5 BOOTSTRAP FOR INTEGRATION TESTS
+	================================================================
+	The bootstrap is similar to the unit test page, with the same
+	critical data-sap-ui-resourceroots mapping.
+
+	Key difference: data-sap-ui-oninit points to the OPA test
+	runner script instead of the unit test runner.
+
+	[INTERMEDIATE] OPA5 tests typically need more UI5 libraries
+	loaded because they interact with actual UI controls. The test
+	framework loads sap.ui.test.* modules automatically.
+	================================================================
+	-->
+	<script
+		src="https://sdk.openui5.org/resources/sap-ui-core.js"
+		data-sap-ui-theme="sap_horizon"
+		data-sap-ui-resourceroots='{"com.shopeasy.app": "../../"}'
+		data-sap-ui-async="true"
+		data-sap-ui-oninit="module:com/shopeasy/app/test/integration/opaTests.qunit">
+	</script>
+
+	<script src="https://sdk.openui5.org/resources/sap/ui/thirdparty/qunit-2.js"></script>
+</head>
+<body>
+	<div id="qunit"></div>
+	<div id="qunit-fixture"></div>
+</body>
+</html>

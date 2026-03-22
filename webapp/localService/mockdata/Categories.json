@@ -1,0 +1,30 @@
+[
+  {
+    "CategoryId": "CAT001",
+    "Name": "Electronics",
+    "Description": "Discover the latest gadgets, audio equipment, laptops, and smart devices.",
+    "ProductCount": 4,
+    "Icon": "sap-icon://laptop"
+  },
+  {
+    "CategoryId": "CAT002",
+    "Name": "Clothing",
+    "Description": "Explore stylish apparel, footwear, and accessories for every occasion.",
+    "ProductCount": 3,
+    "Icon": "sap-icon://shirt"
+  },
+  {
+    "CategoryId": "CAT003",
+    "Name": "Home & Garden",
+    "Description": "Furnish your space with decor, lighting, bedding, and garden essentials.",
+    "ProductCount": 3,
+    "Icon": "sap-icon://home"
+  },
+  {
+    "CategoryId": "CAT004",
+    "Name": "Books",
+    "Description": "Browse our curated collection of bestsellers, classics, and technical reads.",
+    "ProductCount": 2,
+    "Icon": "sap-icon://education"
+  }
+]

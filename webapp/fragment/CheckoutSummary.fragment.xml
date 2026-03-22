@@ -1,0 +1,171 @@
+<!--
+    ============================================================================
+    CheckoutSummary.fragment.xml
+    Namespace: com.shopeasy.app.fragment
+    ============================================================================
+
+    [BEGINNER] ORDER SUMMARY FRAGMENT
+    This fragment displays a summary of everything in the shopping cart, along
+    with the total price. It is meant to be embedded inside a checkout view:
+
+        <core:Fragment
+            fragmentName="com.shopeasy.app.fragment.CheckoutSummary"
+            type="XML" />
+
+    [BEGINNER] THE PANEL CONTROL
+    sap.m.Panel is a container with a collapsible header. It groups related
+    content visually and lets users expand/collapse the section. Common uses:
+      - Order summaries, filter panels, settings groups.
+    Set "expandable" to true if you want the user to be able to collapse it.
+
+    [INTERMEDIATE] AGGREGATION BINDING IN FRAGMENTS
+    The List inside this fragment binds its "items" aggregation to the
+    "cart>/items" path. Aggregation binding tells the List to create one
+    list item for each entry in the array at that model path. The template
+    (ObjectListItem) is cloned for every array element, and each clone
+    receives the binding context of its corresponding element.
+
+    This works identically whether the List is in a view or a fragment —
+    the binding resolution follows the same model-propagation rules.
+
+    [ADVANCED] TOOLBAR INSIDE A LIST
+    A sap.m.List supports the "headerToolbar" aggregation, which places a
+    Toolbar above the list items. We use a *footer*-style Toolbar below the
+    list by placing it after the List inside the Panel — this is a visual
+    trick rather than a formal aggregation, but it works cleanly and keeps
+    the total price visually anchored at the bottom.
+
+    [BEST PRACTICE] ToolbarSpacer
+    ToolbarSpacer is a transparent control that fills all remaining horizontal
+    space inside a Toolbar, pushing subsequent controls to the far end. Use it
+    to right-align labels or buttons:
+
+        <Toolbar>
+            <Title text="Left-aligned" />
+            <ToolbarSpacer />
+            <Button text="Right-aligned" />
+        </Toolbar>
+    ============================================================================
+-->
+<core:FragmentDefinition
+    xmlns:core="sap.ui.core"
+    xmlns="sap.m">
+
+    <Panel
+        headerText="Order Summary"
+        expandable="true"
+        expanded="true"
+        class="sapUiSmallMargin">
+
+        <!--
+            [BEGINNER] expandable="true" adds a collapse/expand toggle arrow
+            to the Panel header. expanded="true" means it starts open.
+        -->
+
+        <!-- Cart items list -->
+        <List
+            items="{cart>/items}"
+            noDataText="Your cart is empty"
+            showSeparators="Inner">
+
+            <!--
+                [INTERMEDIATE] AGGREGATION BINDING
+                items="{cart>/items}" tells the List to iterate over the
+                "items" array in the "cart" JSONModel. For each element, the
+                framework clones the template below (ObjectListItem) and sets
+                the element as the binding context.
+
+                noDataText is shown when the array is empty — a nice UX touch
+                so the user doesn't see a blank area.
+
+                showSeparators="Inner" draws divider lines between items but
+                not above the first or below the last, keeping the look clean.
+            -->
+
+            <items>
+                <ObjectListItem
+                    title="{cart>name}"
+                    number="{
+                        path: 'cart>price',
+                        type: 'sap.ui.model.type.Currency',
+                        formatOptions: { showMeasure: false }
+                    }"
+                    numberUnit="{cart>currencyCode}"
+                    type="Inactive">
+
+                    <!--
+                        [INTERMEDIATE] ObjectListItem is a rich list-item control
+                        that shows a title, numeric value with unit, and optional
+                        attributes. It's ideal for order lines because it formats
+                        the number and unit neatly on the right side.
+                    -->
+
+                    <attributes>
+                        <ObjectAttribute
+                            text="{= 'Qty: ' + ${cart>quantity} }" />
+                    </attributes>
+
+                    <!--
+                        [ADVANCED] We use an expression binding to concatenate
+                        the label 'Qty: ' with the numeric quantity value. This
+                        is simpler than creating a formatter just for a prefix.
+                    -->
+
+                </ObjectListItem>
+            </items>
+
+        </List>
+
+        <!--
+            [INTERMEDIATE] TOTAL PRICE TOOLBAR
+            We place a Toolbar after the List (but still inside the Panel) to
+            serve as a "footer" showing the order total. The ToolbarSpacer
+            pushes the ObjectNumber to the right edge.
+        -->
+
+        <Toolbar class="sapUiTinyMarginTop">
+
+            <content>
+
+                <Title
+                    text="Total"
+                    level="H5" />
+
+                <ToolbarSpacer />
+
+                <!--
+                    [BEST PRACTICE] ToolbarSpacer consumes all remaining
+                    horizontal space, effectively right-aligning everything
+                    that comes after it.
+                -->
+
+                <ObjectNumber
+                    number="{
+                        path: 'cart>/totalPrice',
+                        type: 'sap.ui.model.type.Currency',
+                        formatOptions: { showMeasure: false }
+                    }"
+                    unit="{cart>/currencyCode}"
+                    emphasized="true"
+                    state="Information" />
+
+                <!--
+                    [ADVANCED] Note the absolute path "cart>/totalPrice" here
+                    (with a leading slash) instead of the relative "cart>totalPrice"
+                    used inside the List template. Inside the List, relative paths
+                    resolve against each item's binding context (e.g. cart>/items/0).
+                    Outside the List, we need the absolute path to reach the
+                    top-level totalPrice property of the cart model.
+
+                    [BEST PRACTICE] state="Information" applies a blue semantic
+                    color to the total, making it stand out from the individual
+                    item prices without implying success/error semantics.
+                -->
+
+            </content>
+
+        </Toolbar>
+
+    </Panel>
+
+</core:FragmentDefinition>

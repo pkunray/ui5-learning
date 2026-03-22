@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<!--
+============================================================================
+FILE: unitTests.qunit.html — QUnit Test Runner Page (Unit Tests)
+PROJECT: ShopEasy - SAP UI5 Online Shopping Application
+NAMESPACE: com.shopeasy.app
+============================================================================
+
+[BEGINNER] WHAT IS THIS FILE?
+─────────────────────────────
+This is the HTML "host page" for your unit tests. It performs three jobs:
+  1. Load the QUnit testing framework (CSS + JS)
+  2. Bootstrap the SAP UI5 library so your app modules can be loaded
+  3. Load your test runner script (unitTests.qunit.js)
+
+[BEGINNER] WHY DO WE NEED AN HTML FILE FOR TESTS?
+──────────────────────────────────────────────────
+Unlike Node.js tests (Jest, Mocha) that run in a terminal, QUnit tests
+run INSIDE A BROWSER. The HTML page provides the browser environment
+and a visual test results dashboard (green = pass, red = fail).
+
+You can open this file in a browser directly, or use the ui5 tooling:
+  ui5 serve
+  → navigate to http://localhost:8080/test/unit/unitTests.qunit.html
+
+[INTERMEDIATE] FILE NAMING CONVENTION
+The ".qunit.html" suffix is a UI5 convention that tells developers and
+tooling "this is a QUnit test runner page." Similarly, test JS files
+use ".qunit.js" for the entry point.
+
+[BEST PRACTICE] Keep this page minimal — its ONLY job is setup.
+All actual test logic lives in the .js files loaded by the test runner.
+============================================================================
+-->
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>ShopEasy — Unit Tests</title>
+
+	<!--
+	================================================================
+	[BEGINNER] STEP 1: LOAD QUNIT CSS
+	================================================================
+	QUnit provides a built-in CSS stylesheet that renders the test
+	results dashboard: a header with pass/fail counts, green/red bars
+	for each test, and expandable details for failures.
+
+	UI5 bundles QUnit in its resources, so we load it from the UI5 CDN.
+	The path "sap/ui/thirdparty/qunit-2.css" means:
+	  - sap/ui/thirdparty/ → UI5's bundled third-party libraries
+	  - qunit-2.css        → QUnit version 2 stylesheet
+
+	[INTERMEDIATE] Why does UI5 bundle QUnit?
+	To ensure the QUnit version is compatible with UI5's test utilities
+	(like sap.ui.test.QUnitUtils). Using a different QUnit version from
+	an external CDN might cause compatibility issues.
+	================================================================
+	-->
+	<link rel="stylesheet" href="https://sdk.openui5.org/resources/sap/ui/thirdparty/qunit-2.css">
+
+	<!--
+	================================================================
+	[BEGINNER] STEP 2: BOOTSTRAP SAP UI5
+	================================================================
+	This <script> tag loads and configures the UI5 framework. The
+	attributes on this tag are CRITICAL — they tell UI5 how to set
+	itself up for testing.
+
+	Let's break down each attribute:
+
+	src="https://sdk.openui5.org/resources/sap-ui-core.js"
+	  → Loads the core UI5 library from the official CDN.
+	    In production, you'd typically use a specific version:
+	    https://sdk.openui5.org/1.120.0/resources/sap-ui-core.js
+
+	data-sap-ui-theme="sap_horizon"
+	  → [BEGINNER] Sets the visual theme. sap_horizon is SAP's modern
+	    theme. For tests we don't really care about looks, but some
+	    controls behave differently without a theme loaded.
+
+	data-sap-ui-resourceroots='{"com.shopeasy.app": "../../"}'
+	  → [BEGINNER] THIS IS THE MOST IMPORTANT ATTRIBUTE FOR TESTING.
+	    It tells UI5: "When you see 'com.shopeasy.app' as a module
+	    namespace, look for files starting from '../../' (two directories
+	    up from this HTML file)."
+
+	    Since this file is at:     webapp/test/unit/unitTests.qunit.html
+	    And the app root is at:    webapp/
+	    Going ../../ from test/unit/ takes us to webapp/
+
+	    So when a test does:
+	      sap.ui.define(["com/shopeasy/app/model/formatter"], ...)
+	    UI5 resolves it to:
+	      ../../model/formatter.js → webapp/model/formatter.js ✓
+
+	    [GOTCHA] If this path is WRONG, you'll get cryptic "module not
+	    found" errors. Always count directories carefully!
+
+	data-sap-ui-async="true"
+	  → [INTERMEDIATE] Load modules asynchronously. Always true in modern
+	    UI5. Synchronous loading is deprecated and slow.
+
+	data-sap-ui-oninit="module:com/shopeasy/app/test/unit/unitTests.qunit"
+	  → [BEGINNER] WHAT TO RUN AFTER UI5 IS READY.
+	    This tells UI5: "Once the framework is fully loaded, run
+	    the module at com/shopeasy/app/test/unit/unitTests.qunit.js"
+
+	    That module (the .js file) is responsible for loading and
+	    executing all individual test modules.
+
+	    [INTERMEDIATE] The "module:" prefix tells UI5 to load the
+	    value as an AMD module via sap.ui.require(), rather than
+	    treating it as inline JavaScript code.
+	================================================================
+	-->
+	<script
+		src="https://sdk.openui5.org/resources/sap-ui-core.js"
+		data-sap-ui-theme="sap_horizon"
+		data-sap-ui-resourceroots='{"com.shopeasy.app": "../../"}'
+		data-sap-ui-async="true"
+		data-sap-ui-oninit="module:com/shopeasy/app/test/unit/unitTests.qunit">
+	</script>
+
+	<!--
+	================================================================
+	[BEGINNER] STEP 3: LOAD QUNIT JAVASCRIPT
+	================================================================
+	This loads the QUnit testing framework itself. It provides:
+	  - QUnit.module() → Group related tests together
+	  - QUnit.test()   → Define individual test cases
+	  - assert.*       → Assertion methods (strictEqual, ok, deepEqual, etc.)
+
+	[GOTCHA] This MUST be loaded AFTER the UI5 bootstrap, not before.
+	UI5's bootstrap may configure the test environment in ways that
+	QUnit depends on.
+
+	[INTERMEDIATE] UI5 also provides "sap/ui/thirdparty/qunit-2" as
+	a module you can load via sap.ui.require(). Some setups load
+	QUnit that way instead of via a <script> tag. Both approaches work.
+	================================================================
+	-->
+	<script src="https://sdk.openui5.org/resources/sap/ui/thirdparty/qunit-2.js"></script>
+</head>
+<body>
+	<!--
+	================================================================
+	[BEGINNER] QUNIT'S TEST OUTPUT CONTAINERS
+	================================================================
+	QUnit automatically looks for these two elements:
+	  - #qunit: The main container where the test results dashboard renders
+	  - #qunit-fixture: A hidden container for DOM elements that tests create
+
+	[INTERMEDIATE] The #qunit-fixture is automatically CLEANED UP after
+	each test runs. If a test creates DOM elements inside #qunit-fixture,
+	QUnit removes them before the next test starts. This prevents tests
+	from interfering with each other (test isolation).
+
+	For unit tests of pure functions (like formatters), the fixture
+	is rarely used — but it's included as a best practice.
+	================================================================
+	-->
+	<div id="qunit"></div>
+	<div id="qunit-fixture"></div>
+</body>
+</html>

@@ -1,0 +1,726 @@
+<!--
+========================================================================
+FILE: Checkout.view.xml — Checkout / Order Placement Page
+NAMESPACE: com.shopeasy.app.view
+========================================================================
+
+[BEGINNER] WHAT IS THIS VIEW?
+The checkout page guides users through placing an order. It uses the
+sap.m.Wizard control to create a multi-step form with:
+  Step 1: Shipping Address (form with input fields)
+  Step 2: Payment Method (radio button selection)
+  Step 3: Order Summary (cart items + total)
+
+[INTERMEDIATE] KEY CONCEPTS DEMONSTRATED:
+  - sap.m.Wizard for multi-step workflows
+  - sap.ui.layout.form.SimpleForm for form layouts
+  - Input controls with validation (Input, Select, RadioButtonGroup)
+  - MessageStrip for inline feedback
+  - Binding across multiple models (cart + i18n + local form data)
+  - Form patterns and best practices in UI5
+
+[ADVANCED] FORM HANDLING IN UI5
+UI5 does NOT have built-in "form state management" like React Hook Form
+or Angular Reactive Forms. Instead:
+  - Bind input controls to a local JSONModel
+  - Validate in the controller using Input's valueState property
+  - Show errors via MessageStrip, MessageBox, or MessageToast
+  - Submit by reading the model data and sending it to the backend
+
+Learn more: docs/06-controls.md, docs/09-formatting.md
+========================================================================
+-->
+
+<mvc:View
+    controllerName="com.shopeasy.app.controller.Checkout"
+    xmlns="sap.m"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns:core="sap.ui.core"
+    xmlns:l="sap.ui.layout"
+    xmlns:form="sap.ui.layout.form"
+>
+    <!--
+    [BEGINNER] NAMESPACE FOR FORM CONTROLS
+    ====================================================
+    xmlns:form="sap.ui.layout.form"
+      This namespace gives us access to form layout controls:
+        - form:SimpleForm → A simplified form layout
+        - form:Form → A more powerful form layout with FormContainers
+        - form:FormElement → Individual form field wrapper
+
+    xmlns:l="sap.ui.layout"
+      This namespace gives us access to layout controls:
+        - l:Grid → CSS Grid layout
+        - l:VerticalLayout / l:HorizontalLayout → Simple layouts
+        - l:ResponsiveFlowLayout → Flow layout that wraps
+
+    [INTERMEDIATE] WHY SEPARATE NAMESPACES?
+    UI5 organizes controls into libraries by function:
+      sap.m        → Mobile/responsive controls (buttons, lists, pages)
+      sap.ui.core  → Core framework controls (Icon, Item)
+      sap.ui.layout → Layout controls (Grid, Splitter)
+      sap.ui.layout.form → Form-specific layout controls
+      sap.f        → Fiori-specific controls (Avatar, GridList)
+
+    Each library is loaded independently, so you only load what you need.
+    -->
+
+    <Page
+        id="checkoutPage"
+        title="{i18n>checkoutTitle}"
+        showNavButton="true"
+        navButtonPress=".onNavBack"
+    >
+
+        <!--
+        [INTERMEDIATE] THE <MessageStrip> CONTROL — Inline Notifications
+        ====================================================
+        sap.m.MessageStrip displays a colored bar with a message.
+        It's used for inline notifications, warnings, or errors
+        within a page (as opposed to MessageBox which is a modal dialog).
+
+        type="Information"
+          [BEGINNER] MessageStrip types and their colors:
+            - "Information" → Blue bar with info icon
+            - "Success"     → Green bar with checkmark icon
+            - "Warning"     → Orange bar with warning icon
+            - "Error"       → Red bar with error icon
+
+        showCloseButton="true"
+          Shows an "X" to dismiss the message. Once closed, the
+          MessageStrip is hidden but not destroyed — the controller
+          can show it again.
+
+        visible="{checkout>/messageStripVisible}"
+          [INTERMEDIATE] Bound to a local view model. The controller
+          sets this to true when validation fails, showing the error
+          message. After the user corrects the input, it can be hidden.
+
+        text="{checkout>/messageStripText}"
+          The message text, also from the local view model. This lets
+          the controller dynamically change the message based on which
+          validation failed.
+
+        [BEST PRACTICE] VALIDATION FEEDBACK HIERARCHY
+        UI5 offers several ways to show validation feedback:
+          1. Input's valueState      → Per-field error (red border)
+          2. Input's valueStateText  → Per-field error message
+          3. MessageStrip            → Section-level or form-level message
+          4. MessageToast            → Transient notification (disappears)
+          5. MessageBox              → Modal confirmation/error dialog
+          6. Message Manager         → Collects all messages in a list
+
+        Use them in combination:
+          - valueState on each invalid input (shows which fields are wrong)
+          - MessageStrip at the top of the form (summary: "Please fill required fields")
+          - MessageToast for success ("Order placed!")
+        -->
+        <MessageStrip
+            text="{checkout>/messageStripText}"
+            type="{checkout>/messageStripType}"
+            showCloseButton="true"
+            visible="{checkout>/messageStripVisible}"
+            class="sapUiSmallMargin"
+        />
+
+        <!--
+        [BEGINNER] THE <Wizard> CONTROL — Multi-Step Workflow
+        ====================================================
+        sap.m.Wizard creates a step-by-step guided workflow. Each step
+        has a title, an optional icon, and content. The user progresses
+        through steps sequentially.
+
+        Think of it like a multi-page form:
+          Step 1: Shipping → Step 2: Payment → Step 3: Review → Done!
+
+        id="checkoutWizard"
+          Used by the controller to manage step navigation:
+            var oWizard = this.byId("checkoutWizard");
+            oWizard.nextStep();      // Go to next step
+            oWizard.previousStep();  // Go back
+            oWizard.goToStep(oStep); // Jump to specific step
+
+        complete=".onWizardComplete"
+          [INTERMEDIATE] Fires when the user reaches the LAST step and
+          clicks the "complete" action. This is where you'd submit
+          the order to the backend.
+
+        [INTERMEDIATE] HOW THE WIZARD WORKS
+          - Steps are shown sequentially (step 1, then 2, then 3)
+          - Each step has a "validated" property that gates progression
+          - When validated="true", the "Next Step" button appears
+          - All completed steps remain visible (scrolled up) so the
+            user can review/edit previous entries
+          - The step indicators at the top show progress
+
+        [ADVANCED] WIZARD vs. MANUAL STEP MANAGEMENT
+        You could build a step-by-step form manually using:
+          - IconTabBar with tabs for each step
+          - NavContainer with pages for each step
+          - Conditional visibility on VBox containers
+
+        But the Wizard control provides:
+          - Built-in step indicators (numbered circles)
+          - Automatic "Next Step" button management
+          - Step validation gating (can't skip ahead)
+          - Responsive layout on different screen sizes
+          - Fiori-compliant design out of the box
+        -->
+        <Wizard
+            id="checkoutWizard"
+            complete=".onWizardComplete"
+            class="sapUiResponsiveContentPadding"
+        >
+            <!--
+            ============================================================
+            STEP 1: SHIPPING ADDRESS
+            ============================================================
+
+            [BEGINNER] THE <WizardStep> CONTROL
+            ====================================================
+            Each WizardStep represents one phase of the workflow.
+
+            id="shippingStep"
+              Used by the controller to reference this step:
+                var oStep = this.byId("shippingStep");
+                oWizard.validateStep(oStep); // Mark as complete
+
+            title="{i18n>shippingAddress}"
+              The step title shown in the step indicator and as a heading.
+
+            icon="sap-icon://shipping-status"
+              Icon shown in the step indicator circle (before completion).
+
+            validated="false"
+              [INTERMEDIATE] STEP VALIDATION
+              When false, the "Next Step" button is NOT shown. The user
+              cannot proceed until the controller sets validated to true
+              (after form validation passes).
+
+              In the controller:
+                // After validating all shipping fields:
+                this.byId("checkoutWizard").validateStep(
+                  this.byId("shippingStep")
+                );
+            -->
+            <WizardStep
+                id="shippingStep"
+                title="{i18n>shippingAddress}"
+                icon="sap-icon://shipping-status"
+                validated="false"
+                activate=".onShippingStepActivate"
+            >
+                <!--
+                [BEGINNER] THE <form:SimpleForm> CONTROL
+                ====================================================
+                sap.ui.layout.form.SimpleForm is the EASIEST way to
+                create forms in UI5. You just list Labels and Inputs
+                alternately, and SimpleForm handles the layout.
+
+                It automatically:
+                  - Pairs each Label with the next Input control
+                  - Arranges them in columns based on screen size
+                  - Handles responsive layout (1 column on phone,
+                    2 columns on tablet, 3 on desktop)
+                  - Applies proper spacing and alignment
+
+                editable="true"
+                  [BEGINNER] When true, the form is in "edit mode"
+                  (inputs are editable). When false, inputs display
+                  as read-only text. This toggle is useful for
+                  view/edit mode switching.
+
+                layout="ResponsiveGridLayout"
+                  [INTERMEDIATE] SimpleForm supports multiple layouts:
+                    - "ResponsiveGridLayout": CSS Grid-based, most flexible
+                    - "ResponsiveLayout": Flexbox-based, simpler
+                    - "GridLayout": Fixed grid, less responsive
+                    - "ColumnLayout": Column-based, newest option
+
+                  [BEST PRACTICE] Use ResponsiveGridLayout for forms.
+                  It provides the best responsive behavior and is
+                  recommended by SAP Fiori design guidelines.
+
+                columnsL="2" columnsM="1"
+                  [INTERMEDIATE] How many columns on each screen size:
+                    - columnsL="2": Large screens → 2-column form
+                    - columnsM="1": Medium screens → 1-column form
+                  On small (phone) screens, it's always 1 column.
+
+                [ADVANCED] SimpleForm vs. Form
+                SimpleForm is a convenience wrapper. For complex forms
+                with groups, custom layouts, or dynamic form fields,
+                use the full sap.ui.layout.form.Form control with
+                FormContainers and FormElements. SimpleForm uses
+                Labels as group/field delimiters, which limits flexibility.
+
+                [INTERMEDIATE] FORM FIELDS STRUCTURE
+                In SimpleForm, the pattern is:
+                  <Label text="Field Name" />
+                  <Input value="{model>/path}" />
+
+                Each Label is automatically associated with the next
+                control. This association:
+                  1. Shows the label text next to the input
+                  2. Clicking the label focuses the input (accessibility)
+                  3. Screen readers announce the label when the input
+                     is focused
+                -->
+                <form:SimpleForm
+                    id="shippingForm"
+                    editable="true"
+                    layout="ResponsiveGridLayout"
+                    columnsL="2"
+                    columnsM="1"
+                    title="{i18n>shippingAddress}"
+                >
+                    <!--
+                    [BEGINNER] <Label> AND <Input> PAIRS
+                    ====================================================
+                    Each Label + Input pair represents one form field.
+
+                    Label properties:
+                      text:     The field label text (from i18n)
+                      required: Shows a red asterisk (*) indicating
+                                the field is mandatory
+
+                    Input properties:
+                      value:         Bound to a local form model
+                      placeholder:   Ghost text when empty
+                      valueState:    Visual state (None, Error, Warning, Success)
+                      valueStateText: Message shown with Error/Warning state
+                      liveChange:    Event fired on every keystroke
+                      required:      HTML5 required attribute
+
+                    [INTERMEDIATE] INPUT VALIDATION PATTERN
+                    UI5 inputs don't validate automatically. The pattern is:
+                      1. User types in the input
+                      2. Controller's liveChange handler validates the value
+                      3. If invalid, set valueState="Error" and valueStateText
+                      4. If valid, set valueState="None"
+                      5. Before proceeding, check all fields' valueState
+
+                    [BEST PRACTICE] BINDING FORM DATA TO A LOCAL MODEL
+                    Create a separate JSONModel for form data:
+                      var oFormModel = new JSONModel({
+                        firstName: "", lastName: "", email: "",
+                        phone: "", address: "", city: "",
+                        zipCode: "", country: ""
+                      });
+                      this.getView().setModel(oFormModel, "shipping");
+
+                    This keeps form data separate from business data
+                    and makes it easy to reset or submit the entire form.
+                    -->
+
+                    <!-- First Name -->
+                    <Label
+                        text="{i18n>firstName}"
+                        required="true"
+                    />
+                    <Input
+                        id="firstNameInput"
+                        value="{checkout>/firstName}"
+                        placeholder="{i18n>firstName}"
+                        liveChange=".onFormFieldChange"
+                        required="true"
+                    />
+
+                    <!-- Last Name -->
+                    <Label
+                        text="{i18n>lastName}"
+                        required="true"
+                    />
+                    <Input
+                        id="lastNameInput"
+                        value="{checkout>/lastName}"
+                        placeholder="{i18n>lastName}"
+                        liveChange=".onFormFieldChange"
+                        required="true"
+                    />
+
+                    <!--
+                    [INTERMEDIATE] EMAIL INPUT WITH TYPE
+                    ====================================================
+                    type="Email"
+                      sap.m.Input supports multiple input types that
+                      control the on-screen keyboard on mobile devices:
+                        - "Text"     → Default keyboard
+                        - "Email"    → Keyboard with @ and .com keys
+                        - "Number"   → Numeric keypad
+                        - "Tel"      → Phone number keypad
+                        - "Url"      → Keyboard with / and .com keys
+                        - "Password" → Masked input
+
+                      [GOTCHA] The type property controls the KEYBOARD,
+                      not validation! type="Email" shows an email
+                      keyboard but does NOT validate email format.
+                      You must validate in the controller.
+
+                    [ADVANCED] INPUT VALIDATION WITH UI5 TYPES
+                    For automatic validation, use the "type" binding
+                    option (different from the Input's type property!):
+                      value="{
+                        path: 'checkout>/email',
+                        type: 'sap.ui.model.type.String',
+                        constraints: { minLength: 5 }
+                      }"
+                    This creates a binding type that validates the
+                    value and shows errors automatically. For email
+                    validation, you'd create a custom type.
+                    -->
+                    <Label
+                        text="{i18n>email}"
+                        required="true"
+                    />
+                    <Input
+                        id="emailInput"
+                        value="{checkout>/email}"
+                        placeholder="{i18n>email}"
+                        type="Email"
+                        liveChange=".onFormFieldChange"
+                        required="true"
+                    />
+
+                    <!-- Phone -->
+                    <Label text="{i18n>phone}" />
+                    <Input
+                        id="phoneInput"
+                        value="{checkout>/phone}"
+                        placeholder="{i18n>phone}"
+                        type="Tel"
+                        liveChange=".onFormFieldChange"
+                    />
+
+                    <!-- Address -->
+                    <Label
+                        text="{i18n>address}"
+                        required="true"
+                    />
+                    <Input
+                        id="addressInput"
+                        value="{checkout>/address}"
+                        placeholder="{i18n>address}"
+                        liveChange=".onFormFieldChange"
+                        required="true"
+                    />
+
+                    <!-- City -->
+                    <Label
+                        text="{i18n>city}"
+                        required="true"
+                    />
+                    <Input
+                        id="cityInput"
+                        value="{checkout>/city}"
+                        placeholder="{i18n>city}"
+                        liveChange=".onFormFieldChange"
+                        required="true"
+                    />
+
+                    <!-- ZIP Code -->
+                    <Label
+                        text="{i18n>zipCode}"
+                        required="true"
+                    />
+                    <Input
+                        id="zipCodeInput"
+                        value="{checkout>/zipCode}"
+                        placeholder="{i18n>zipCode}"
+                        liveChange=".onFormFieldChange"
+                        required="true"
+                    />
+
+                    <!--
+                    [INTERMEDIATE] COUNTRY SELECTION WITH <Select>
+                    ====================================================
+                    For predefined options like countries, a Select
+                    (dropdown) is better than a free-text Input:
+                      - Prevents typos (user picks from a list)
+                      - Ensures valid values (standardized country codes)
+                      - Better UX on mobile (native picker)
+
+                    change=".onCountryChange"
+                      Fires when the user picks a different country.
+                      The controller can use this to update shipping
+                      costs, available payment methods, etc.
+
+                    selectedKey="{checkout>/country}"
+                      [INTERMEDIATE] TWO-WAY BINDING ON SELECTED KEY
+                      The selected value is automatically stored in the
+                      shipping model at path /country. When the model
+                      changes, the Select updates; when the user picks
+                      a new option, the model updates. This is two-way
+                      binding in action.
+
+                    [ADVANCED] For a complete country list, you'd bind
+                    the items to a JSON file or a backend service:
+                      items="{countries>/list}"
+                    with <core:Item key="{countries>code}" text="{countries>name}" />
+                    -->
+                    <Label
+                        text="{i18n>country}"
+                        required="true"
+                    />
+                    <Select
+                        id="countrySelect"
+                        selectedKey="{checkout>/country}"
+                        change=".onFormFieldChange"
+                    >
+                        <core:Item key="US" text="United States" />
+                        <core:Item key="DE" text="Germany" />
+                        <core:Item key="GB" text="United Kingdom" />
+                        <core:Item key="FR" text="France" />
+                        <core:Item key="JP" text="Japan" />
+                        <core:Item key="CN" text="China" />
+                        <core:Item key="IN" text="India" />
+                        <core:Item key="BR" text="Brazil" />
+                    </Select>
+                </form:SimpleForm>
+            </WizardStep>
+
+            <!--
+            ============================================================
+            STEP 2: PAYMENT METHOD
+            ============================================================
+
+            [BEGINNER] PAYMENT STEP
+            The second wizard step lets users choose a payment method.
+            We use RadioButtonGroup for single-selection from a small
+            set of options.
+            -->
+            <WizardStep
+                id="paymentStep"
+                title="{i18n>paymentMethod}"
+                icon="sap-icon://credit-card"
+                activate=".onPaymentStepActivate"
+            >
+                <VBox class="sapUiMediumMargin">
+                    <Title
+                        text="{i18n>paymentMethod}"
+                        level="H3"
+                        class="sapUiSmallMarginBottom"
+                    />
+
+                    <!--
+                    [INTERMEDIATE] THE <RadioButtonGroup> CONTROL
+                    ====================================================
+                    sap.m.RadioButtonGroup manages a set of radio buttons
+                    where only ONE can be selected at a time.
+
+                    columns="1"
+                      Arranges radio buttons in a single column (stacked).
+                      Set to 2 or 3 for a multi-column layout.
+
+                    selectedIndex="0"
+                      [BEGINNER] The initially selected radio button
+                      (0-based index). Index 0 = first option.
+
+                    select=".onPaymentMethodSelect"
+                      Fires when the user picks a different payment method.
+
+                    [BEGINNER] RADIO BUTTONS vs. CHECKBOX vs. SELECT
+                      - RadioButtonGroup: Pick ONE from a SMALL set (2-5)
+                      - CheckBox: Toggle ON/OFF for each option independently
+                      - Select (dropdown): Pick ONE from a LARGER set (5+)
+                      - MultiComboBox: Pick MULTIPLE from a large set
+
+                    [BEST PRACTICE] Use radio buttons when:
+                      - There are 2-5 options
+                      - All options should be visible at once
+                      - The user needs to compare options
+
+                    Use a Select (dropdown) when:
+                      - There are more than 5 options
+                      - Screen space is limited
+                      - Options don't need comparison
+                    -->
+                    <RadioButtonGroup
+                        id="paymentMethodGroup"
+                        columns="1"
+                        selectedIndex="0"
+                        select=".onPaymentMethodSelect"
+                        class="sapUiSmallMarginBottom"
+                    >
+                        <!--
+                        [BEGINNER] <RadioButton> — Single Option
+                        Each RadioButton has a text label. The group
+                        ensures only one can be selected.
+
+                        [INTERMEDIATE] For more complex radio options
+                        (e.g., showing logos, descriptions), you'd use
+                        CustomListItem with a List in "SingleSelectMaster"
+                        mode instead of RadioButtonGroup.
+                        -->
+                        <RadioButton text="Credit Card" />
+                        <RadioButton text="PayPal" />
+                        <RadioButton text="Bank Transfer" />
+                        <RadioButton text="Cash on Delivery" />
+                    </RadioButtonGroup>
+
+                    <!--
+                    [INTERMEDIATE] PAYMENT DETAILS PLACEHOLDER
+                    In a real app, selecting a payment method would
+                    show additional form fields:
+                      - Credit Card: Card number, expiry, CVV
+                      - PayPal: Redirect to PayPal login
+                      - Bank Transfer: Bank account details
+
+                    These would be implemented with conditional visibility
+                    based on the selected radio button index.
+                    -->
+                    <MessageStrip
+                        text="Payment details would be collected here based on the selected method."
+                        type="Information"
+                        showIcon="true"
+                    />
+                </VBox>
+            </WizardStep>
+
+            <!--
+            ============================================================
+            STEP 3: ORDER SUMMARY
+            ============================================================
+
+            [BEGINNER] ORDER SUMMARY STEP
+            The final step shows a summary of the order before the user
+            confirms. It displays:
+              - Cart items (from cart model)
+              - Total price
+              - "Place Order" button
+
+            [BEST PRACTICE] ORDER REVIEW BEFORE SUBMISSION
+            Always show users a summary before they commit to an action
+            (especially payments). This reduces errors and builds trust.
+            The summary should include ALL relevant info:
+              - What they're buying (items, quantities)
+              - How much it costs (itemized + total)
+              - Where it's shipping (address from step 1)
+              - How they're paying (method from step 2)
+            -->
+            <WizardStep
+                id="summaryStep"
+                title="{i18n>orderSummary}"
+                icon="sap-icon://bar-chart"
+                activate=".onSummaryStepActivate"
+            >
+                <VBox class="sapUiMediumMargin">
+                    <Title
+                        text="{i18n>orderSummary}"
+                        level="H3"
+                        class="sapUiSmallMarginBottom"
+                    />
+
+                    <!--
+                    [BEGINNER] ORDER ITEMS LIST
+                    ====================================================
+                    A simple List bound to the cart items. Each item
+                    shows as a StandardListItem with the product name,
+                    price, and quantity.
+
+                    items="{cart>/items}"
+                      Aggregation binding to the cart model's items array.
+
+                    [INTERMEDIATE] StandardListItem vs. ObjectListItem
+                    We use StandardListItem here because we need a simpler
+                    display than the full ObjectListItem:
+                      - title: Product name
+                      - description: Quantity info
+                      - info: Price
+                      - infoState: Color for the price (neutral)
+                    -->
+                    <List
+                        id="summaryList"
+                        items="{cart>/items}"
+                        headerText="{i18n>cartTitle}"
+                    >
+                        <StandardListItem
+                            title="{cart>name}"
+                            description="{= 'Qty: ' + ${cart>quantity}}"
+                            info="{
+                                path: 'cart>price',
+                                formatter: '.formatter.formatPrice'
+                            }"
+                            infoState="None"
+                            icon="{cart>imageUrl}"
+                        />
+                    </List>
+
+                    <!--
+                    [INTERMEDIATE] ORDER TOTAL SECTION
+                    ====================================================
+                    A visually distinct section showing the total cost.
+                    We use an HBox to lay out the label and amount
+                    side by side.
+
+                    [ADVANCED] PANEL CONTROL FOR SECTIONS
+                    An alternative approach would be to wrap the total
+                    in a Panel control for a card-like appearance:
+                      <Panel headerText="Order Total" expandable="false">
+                        <ObjectNumber ... />
+                      </Panel>
+                    -->
+                    <HBox
+                        alignItems="Center"
+                        justifyContent="End"
+                        class="sapUiMediumMarginTop"
+                    >
+                        <Title
+                            text="{i18n>total}:"
+                            level="H3"
+                            class="sapUiSmallMarginEnd"
+                        />
+                        <ObjectNumber
+                            number="{
+                                path: 'cart>/totalPrice',
+                                formatter: '.formatter.formatPrice'
+                            }"
+                            unit="{cart>/currency}"
+                            emphasized="true"
+                        />
+                    </HBox>
+
+                    <!--
+                    [BEGINNER] PLACE ORDER BUTTON
+                    ====================================================
+                    The final action button. Pressing this submits the
+                    order (in a real app, this would call an OData
+                    create operation or a custom backend API).
+
+                    press=".onPlaceOrder"
+                      The controller handler that:
+                        1. Final validation check
+                        2. Collects shipping, payment, and cart data
+                        3. Sends to the backend (OData or REST)
+                        4. Shows success MessageBox
+                        5. Clears the cart
+                        6. Navigates to an order confirmation page
+
+                    type="Emphasized"
+                      Primary action styling.
+
+                    [BEST PRACTICE] After successful order placement:
+                      1. Show a success message with order number
+                      2. Clear the cart model
+                      3. Navigate to a confirmation page (not back to cart)
+                      4. Prevent browser back from re-submitting
+
+                    [ADVANCED] PREVENTING DOUBLE SUBMISSIONS
+                    Set the button to busy or disabled after first press:
+                      oButton.setBusy(true);
+                    Then re-enable after the backend responds.
+                    -->
+                    <Button
+                        text="{i18n>placeOrder}"
+                        type="Emphasized"
+                        icon="sap-icon://accept"
+                        press=".onPlaceOrder"
+                        class="sapUiMediumMarginTop"
+                    />
+                </VBox>
+            </WizardStep>
+        </Wizard>
+
+    </Page>
+
+</mvc:View>

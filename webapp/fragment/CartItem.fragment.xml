@@ -1,0 +1,153 @@
+<!--
+    ============================================================================
+    CartItem.fragment.xml
+    Namespace: com.shopeasy.app.fragment
+    ============================================================================
+
+    [BEGINNER] FRAGMENTS INSIDE LIST AGGREGATIONS
+    This fragment defines the template for a single cart item. It is designed
+    to be used as the "items" aggregation template of a sap.m.List:
+
+        <List items="{cart>/items}">
+            <core:Fragment
+                fragmentName="com.shopeasy.app.fragment.CartItem"
+                type="XML" />
+        </List>
+
+    Each item in the "cart>/items" array gets its own instance of this fragment,
+    and the binding context is set automatically by the List control.
+
+    [INTERMEDIATE] WHY CustomListItem?
+    sap.m.StandardListItem covers simple cases (icon + title + description),
+    but when you need a fully custom layout — multiple controls arranged in
+    rows/columns with interactive elements like StepInput and delete Button —
+    use CustomListItem. It gives you full control over the content while still
+    participating in the List's selection, swipe, and keyboard navigation.
+
+    [INTERMEDIATE] THE "cart>" MODEL PREFIX
+    All bindings below use the "cart>" prefix, which means they target a named
+    JSON model called "cart" set on the view or component:
+
+        this.getView().setModel(oCartModel, "cart");
+
+    Named models let you keep domain data separate. The default (unnamed) model
+    might hold product catalog data from OData, while "cart" holds local
+    shopping-cart state in a client-side JSONModel.
+
+    [ADVANCED] FRAGMENT EVENT HANDLERS
+    Fragments don't have controllers, so event handlers (like the delete button's
+    "press" event) must reference functions on the hosting view's controller.
+    When you load a fragment programmatically, pass `controller: this` so the
+    framework can resolve handler names like ".onDeleteCartItem".
+
+    When the fragment is loaded declaratively inside a view's XML, the view's
+    controller is used automatically.
+
+    [BEST PRACTICE] Keep interactive logic minimal inside fragments. The fragment
+    declares which event handler to call; the controller implements the logic.
+    This separation makes the fragment easy to reuse in different views that
+    may handle the same event differently.
+    ============================================================================
+-->
+<core:FragmentDefinition
+    xmlns:core="sap.ui.core"
+    xmlns="sap.m">
+
+    <!--
+        [BEGINNER] core:FragmentDefinition is the invisible root wrapper.
+        Inside it we place exactly one top-level control — a CustomListItem —
+        which the parent List uses as its item template.
+    -->
+
+    <CustomListItem
+        type="Inactive"
+        class="sapUiSmallMarginTopBottom">
+
+        <!--
+            [BEGINNER] type="Inactive" means the list item itself is not
+            clickable/selectable. Interaction happens through the child
+            controls (StepInput, delete Button) instead.
+        -->
+
+        <HBox
+            alignItems="Center"
+            justifyContent="SpaceBetween"
+            width="100%"
+            class="sapUiSmallMargin">
+
+            <!-- Small product thumbnail -->
+            <Avatar
+                src="{cart>imageUrl}"
+                displaySize="S"
+                displayShape="Square"
+                class="sapUiSmallMarginEnd" />
+
+            <!--
+                [INTERMEDIATE] Avatar with displayShape="Square" works well for
+                product images. displaySize="S" keeps it compact for list items.
+            -->
+
+            <!-- Product name and unit price -->
+            <VBox
+                class="sapUiSmallMarginEnd"
+                width="40%">
+
+                <Text
+                    text="{cart>name}"
+                    maxLines="2"
+                    class="sapUiTinyMarginBottom" />
+
+                <!--
+                    [BEGINNER] maxLines="2" truncates long product names with an
+                    ellipsis, preventing the layout from breaking.
+                -->
+
+                <ObjectNumber
+                    number="{
+                        path: 'cart>price',
+                        type: 'sap.ui.model.type.Currency',
+                        formatOptions: { showMeasure: false }
+                    }"
+                    unit="{cart>currencyCode}"
+                    emphasized="false" />
+            </VBox>
+
+            <!-- Quantity selector -->
+            <StepInput
+                value="{cart>quantity}"
+                min="1"
+                max="99"
+                step="1"
+                width="8rem"
+                change=".onCartItemQuantityChange"
+                class="sapUiSmallMarginEnd" />
+
+            <!--
+                [INTERMEDIATE] StepInput provides +/- buttons and direct numeric
+                entry. The two-way binding on {cart>quantity} means the JSONModel
+                is updated automatically when the user changes the value.
+
+                [ADVANCED] The "change" event fires after the value is committed
+                (not on every keystroke). The handler ".onCartItemQuantityChange"
+                is resolved on the hosting view's controller, where you would
+                typically recalculate the cart total.
+            -->
+
+            <!-- Delete button -->
+            <Button
+                icon="sap-icon://delete"
+                type="Transparent"
+                tooltip="Remove from cart"
+                press=".onDeleteCartItem" />
+
+            <!--
+                [BEST PRACTICE] Use icon-only buttons with a tooltip for
+                destructive actions in compact list layouts. The "Transparent"
+                type keeps the button visually lightweight until hovered.
+            -->
+
+        </HBox>
+
+    </CustomListItem>
+
+</core:FragmentDefinition>

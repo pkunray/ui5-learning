@@ -1,0 +1,494 @@
+<!--
+========================================================================
+FILE: ProductList.view.xml — Product Listing with Search, Sort, Filter
+NAMESPACE: com.shopeasy.app.view
+========================================================================
+
+[BEGINNER] WHAT IS THIS VIEW?
+This view displays a list of products within a selected category. It
+includes a toolbar for searching and sorting, and each product is
+shown as an ObjectListItem with its name, price, rating, and stock.
+
+[INTERMEDIATE] KEY CONCEPTS DEMONSTRATED:
+  - Toolbar with SearchField and sort controls
+  - List with growing (lazy loading) feature
+  - ObjectListItem for structured data display
+  - Aggregation binding with OData entity set
+  - Formatter functions for price and availability
+  - Event handling for search, sort, and navigation
+
+Learn more: docs/06-controls.md, docs/10-filtering-sorting.md
+========================================================================
+-->
+
+<mvc:View
+    controllerName="com.shopeasy.app.controller.ProductList"
+    xmlns="sap.m"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns:core="sap.ui.core"
+>
+    <!--
+    [BEGINNER] PAGE WITH BACK NAVIGATION
+    ====================================================
+    showNavButton="true"
+      Shows a back-arrow (<) button in the page header.
+      This is standard for sub-pages (pages you navigate TO,
+      not the landing page).
+
+    navButtonPress=".onNavBack"
+      [BEGINNER] Fires when the user presses the back button.
+      The controller's onNavBack method typically calls:
+        window.history.go(-1)  or  router.navTo("home")
+
+    title="{i18n>productsTitle}"
+      Page title bound to i18n for translation support.
+
+    [INTERMEDIATE] PAGE vs. SEMANTIC PAGE
+    sap.m.Page is simple and works for most cases.
+    sap.f.semantic.SemanticPage provides pre-defined positions
+    for standard actions (edit, delete, share, etc.) following
+    Fiori design guidelines. For production Fiori apps, prefer
+    SemanticPage. For learning, sap.m.Page is clearer.
+    -->
+    <Page
+        id="productListPage"
+        title="{i18n>productsTitle}"
+        showNavButton="true"
+        navButtonPress=".onNavBack"
+    >
+        <!--
+        [BEGINNER] THE <subHeader> AGGREGATION
+        ====================================================
+        The Page control has a special aggregation called "subHeader"
+        that renders a bar BELOW the main header. It's perfect for
+        search and filter controls that should stay visible while
+        the content scrolls.
+
+        Think of it like a sticky toolbar below the page title.
+
+        [INTERMEDIATE] TOOLBAR vs. BAR
+        UI5 has two similar controls for horizontal layouts:
+          - sap.m.Bar: Simple left/middle/right layout (3 sections)
+          - sap.m.Toolbar: Flexible container that lays items with flexbox
+          - sap.m.OverflowToolbar: Toolbar that collapses items into a
+            "..." overflow menu on small screens
+
+        [BEST PRACTICE] Use OverflowToolbar instead of Toolbar when
+        your toolbar has many items. On mobile, items that don't fit
+        automatically move into an overflow popover (the "..." button).
+        This ensures usability across screen sizes without custom code.
+        -->
+        <subHeader>
+            <OverflowToolbar>
+                <!--
+                [BEGINNER] THE <SearchField> CONTROL
+                ====================================================
+                sap.m.SearchField renders a search input with a search
+                icon button. It's the standard way to add search
+                functionality in UI5 apps.
+
+                id="searchField"
+                  Giving it an ID lets the controller access it to
+                  read the current search value:
+                    this.byId("searchField").getValue()
+
+                placeholder="{i18n>search}"
+                  Ghost text shown when the field is empty.
+                  Bound to i18n key: "Search products..."
+
+                search=".onSearch"
+                  [INTERMEDIATE] EVENT: liveChange vs. search
+                    - liveChange: Fires on EVERY keystroke as the user
+                      types. Provides instant/live filtering.
+                    - search: Fires only when user presses Enter or
+                      clicks the search icon. Better for server-side
+                      filtering (avoids too many requests).
+
+                  For client-side filtering with mock data, liveChange
+                  gives a better user experience (instant results).
+                  For real OData services with large datasets, use
+                  the "search" event to avoid hammering the server.
+
+                  [ADVANCED] DEBOUNCING
+                  If using liveChange with server-side search, add a
+                  debounce delay in the controller (e.g., wait 300ms
+                  after the last keystroke before sending the request).
+                  UI5 doesn't do this automatically.
+
+                width="auto"
+                  [INTERMEDIATE] Setting width to "auto" lets the
+                  SearchField take available space in the toolbar.
+                  Combined with ToolbarSpacer, this creates a flexible
+                  responsive layout.
+                -->
+                <SearchField
+                    id="searchField"
+                    placeholder="{i18n>search}"
+                    search=".onSearch"
+                    width="auto"
+                />
+
+                <!--
+                [BEGINNER] THE <ToolbarSpacer> CONTROL
+                ====================================================
+                sap.m.ToolbarSpacer is a utility control that pushes
+                subsequent items to the right. It renders as a flex
+                spacer (flex-grow: 1) in the toolbar.
+
+                Before ToolbarSpacer:  [Search] [Sort] [Filter]
+                After ToolbarSpacer:   [Search]            [Sort] [Filter]
+
+                It's like CSS margin-left: auto on the next element.
+                -->
+                <ToolbarSpacer />
+
+                <!--
+                [INTERMEDIATE] THE <Select> CONTROL — Dropdown for Sorting
+                ====================================================
+                sap.m.Select renders a dropdown/combobox for single
+                value selection. We use it here to let users choose
+                how to sort the product list.
+
+                change=".onSortChange"
+                  Fires when the user selects a different sort option.
+                  The controller reads the selected key and applies a
+                  Sorter to the list binding.
+
+                [INTERMEDIATE] Select vs. ComboBox
+                  - Select: Dropdown only, user MUST pick from options
+                  - ComboBox: Dropdown + free text input with autocomplete
+                  - MultiComboBox: ComboBox that allows multiple selections
+
+                Use Select when the options are limited and predefined.
+                Use ComboBox when the user might want to type to filter
+                or when there are many options.
+                -->
+                <Select
+                    id="sortSelect"
+                    change=".onSortChange"
+                    tooltip="{i18n>sortBy}"
+                >
+                    <!--
+                    [BEGINNER] <core:Item> — Dropdown Option
+                    ====================================================
+                    Each <core:Item> represents one option in the dropdown.
+
+                    key: A programmatic identifier (not shown to users).
+                         Used in the controller to determine which sort
+                         to apply.
+                    text: The user-visible label.
+
+                    The core: prefix means this control is from the
+                    sap.ui.core library, not sap.m. Item is a base
+                    control used across many UI5 controls (Select,
+                    ComboBox, List, etc.).
+                    -->
+                    <core:Item key="Name" text="{i18n>sortBy}: Name" />
+                    <core:Item key="Price" text="{i18n>sortBy}: Price" />
+                    <core:Item key="Rating" text="{i18n>sortBy}: Rating" />
+                </Select>
+
+                <!--
+                [INTERMEDIATE] BUTTON TO OPEN ViewSettingsDialog
+                ====================================================
+                This button opens a ViewSettingsDialog for advanced
+                filtering and sorting. The dialog is typically defined
+                as a Fragment (reusable XML snippet) and loaded in the
+                controller.
+
+                icon="sap-icon://sort"
+                  Shows only an icon (no text) to save toolbar space.
+                  On narrow screens, icon-only buttons are more practical.
+
+                press=".onOpenViewSettings"
+                  Opens the ViewSettingsDialog fragment.
+
+                [ADVANCED] ViewSettingsDialog provides a standardized
+                Fiori UI for:
+                  - Sorting by multiple fields
+                  - Filtering by multiple criteria
+                  - Grouping list items by a field
+                All without you building the UI manually.
+                -->
+                <Button
+                    icon="sap-icon://sort"
+                    press=".onOpenViewSettings"
+                    tooltip="{i18n>sortBy}"
+                />
+            </OverflowToolbar>
+        </subHeader>
+
+        <!--
+        [BEGINNER] THE <List> CONTROL — Displaying Collections
+        ====================================================
+        sap.m.List is one of the MOST IMPORTANT controls in UI5.
+        It renders a scrollable list of items, each based on a template.
+
+        id="productList"
+          Used by the controller to access the list and its binding:
+            var oList = this.byId("productList");
+            var oBinding = oList.getBinding("items");
+            oBinding.filter(aFilters);
+
+        [INTERMEDIATE] THE growing AND growingThreshold PROPERTIES
+        ====================================================
+        growing="true"
+          Enables LAZY LOADING (also called "growing" in UI5).
+          Instead of loading ALL products at once, the list loads
+          a small batch and shows a "More" button (or triggers
+          auto-loading on scroll) to load the next batch.
+
+          This is critical for performance with large datasets:
+            - 10,000 products? Load 8 at a time, not all 10,000.
+            - The OData model automatically adds $top and $skip
+              parameters to request only the needed batch.
+
+        growingThreshold="8"
+          How many items to load per batch. The first load gets 8
+          items, pressing "More" loads 8 more, and so on.
+
+          [BEST PRACTICE] Choose a threshold that fills about 1.5
+          screens. This way:
+            - The user sees a full screen of items immediately
+            - There are a few items below the fold to hint "more content"
+            - The "More" button or scroll trigger is just off-screen
+
+        growingScrollToLoad="true"
+          [ADVANCED] When true, new items load automatically when
+          the user scrolls near the bottom (infinite scroll).
+          When false, a "More" button is shown at the bottom.
+
+          Infinite scroll feels more natural but makes it harder
+          to reach the page footer. Use with caution.
+
+        noDataText="{i18n>noProducts}"
+          [BEGINNER] Text shown when the list has NO items.
+          This happens when:
+            - The OData service returns an empty collection
+            - All items are filtered out by search/filter
+            - Data hasn't loaded yet (briefly, before the response)
+
+          [BEST PRACTICE] Always set noDataText to guide the user.
+          An empty list with no explanation is confusing UX.
+
+        [BEGINNER] AGGREGATION BINDING ON THE LIST
+        ====================================================
+        items="{/Products}"
+          This binds the "items" aggregation to the /Products
+          OData entity set. For each product entity returned by
+          the OData service, UI5 creates one ObjectListItem using
+          the template defined inside <items>.
+
+          The OData model sends: GET /Products?$top=8
+          (Because growing is enabled with threshold 8)
+
+        [ADVANCED] COMPLEX AGGREGATION BINDING SYNTAX
+        For more control, use the object syntax:
+          items="{
+            path: '/Products',
+            sorter: { path: 'Name' },
+            filters: [{ path: 'CategoryId', operator: 'EQ', value1: 'CAT001' }],
+            parameters: {
+              expand: 'Category',
+              select: 'ProductId,Name,Price,Currency,Stock,Rating'
+            }
+          }"
+
+          - sorter: Default sort order
+          - filters: Default filters applied
+          - parameters.expand: Include related entities (OData $expand)
+          - parameters.select: Request only specific fields (OData $select)
+
+        [BEST PRACTICE] Use $select to request only the fields you
+        need. This reduces payload size and improves performance,
+        especially on slow networks.
+        -->
+        <List
+            id="productList"
+            items="{/Products}"
+            growing="true"
+            growingThreshold="8"
+            growingScrollToLoad="true"
+            noDataText="{i18n>noProducts}"
+        >
+            <!--
+            [BEGINNER] THE <ObjectListItem> — Rich List Item
+            ====================================================
+            sap.m.ObjectListItem is a specialized list item designed
+            for displaying business objects (products, orders, employees).
+
+            It has pre-defined slots for common attributes:
+              - title:       Main text (product name)
+              - number:      Numeric value (price)
+              - numberUnit:  Unit for the number (currency)
+              - intro:       Small text above the title (category name)
+              - icon:        Image/avatar on the left
+              - attributes:  Key-value pairs below the title
+              - firstStatus: Status indicator (colored text)
+              - secondStatus: Another status indicator
+              - markers:     Flag/favorite markers
+
+            This structure follows SAP Fiori design guidelines for
+            list items — consistent layout across all SAP apps.
+
+            [INTERMEDIATE] ObjectListItem vs. StandardListItem vs. CustomListItem
+              - StandardListItem: Simple — icon, title, description, info
+              - ObjectListItem: Rich — title, number, attributes, statuses
+              - CustomListItem: Fully custom — you define the entire layout
+
+            ObjectListItem is ideal for product listings because products
+            naturally have a name (title), price (number), and attributes
+            like rating and availability.
+
+            type="Navigation"
+              [BEGINNER] Shows a chevron (>) on the right side,
+              indicating this item navigates somewhere when pressed.
+              Users learn to associate the chevron with "tap to see more".
+
+            press=".onProductPress"
+              [BEGINNER] Fires when the user taps/clicks this item.
+              The controller reads the ProductId from the binding
+              context and navigates to the productDetail route.
+
+              In the controller:
+                onProductPress: function(oEvent) {
+                  var oItem = oEvent.getSource();
+                  var oCtx = oItem.getBindingContext();
+                  var sProductId = oCtx.getProperty("ProductId");
+                  this.getRouter().navTo("productDetail", {
+                    productId: sProductId
+                  });
+                }
+
+            title="{Name}"
+              Bound to the product's Name property.
+              Shows as the main text: "Wireless Mouse", "Laptop Pro 15"
+
+            number="{
+                path: 'Price',
+                formatter: '.formatter.formatPrice'
+            }"
+              [INTERMEDIATE] BINDING WITH FORMATTER
+              This uses a FORMATTER to transform the raw price value
+              before displaying it.
+
+              Breaking it down:
+                path: 'Price'  → Read the Price value from the model
+                formatter: '.formatter.formatPrice'
+                  → Pass it through the formatPrice function
+                  → The "." means "on the controller instance"
+                  → Controller has: formatter: formatter (imported module)
+                  → So this resolves to: formatter.formatPrice(priceValue)
+
+              Flow: Model Price (42.5) → formatPrice(42.5) → "$42.50"
+
+              [GOTCHA] The path is RELATIVE (no leading /) because
+              we're inside a list binding. Each item has its own
+              binding context (e.g., /Products('P001')), and 'Price'
+              resolves relative to that context.
+
+            numberUnit="{Currency}"
+              The unit displayed next to the number: "USD", "EUR"
+              Shows as: "$42.50 USD"
+
+            [BEST PRACTICE] Use the number + numberUnit properties
+            together. UI5 handles their layout responsively — on
+            narrow screens, the number may wrap below the title.
+            -->
+            <ObjectListItem
+                type="Navigation"
+                press=".onProductPress"
+                title="{Name}"
+                number="{
+                    path: 'Price',
+                    formatter: '.formatter.formatPrice'
+                }"
+                numberUnit="{Currency}"
+                icon="{ImageUrl}"
+            >
+                <!--
+                [INTERMEDIATE] THE <attributes> AGGREGATION
+                ====================================================
+                ObjectListItem's "attributes" aggregation holds
+                ObjectAttribute controls that display below the title
+                as key-value pairs.
+
+                These are used for supplementary information that
+                supports the main content (title + number).
+
+                [BEGINNER] ObjectAttribute
+                  title: The label (e.g., "Rating")
+                  text:  The value (e.g., "4.7 / 5")
+
+                We show Rating with the formatRating formatter to
+                clean up decimal places (4.66667 → "4.7").
+                -->
+                <attributes>
+                    <ObjectAttribute
+                        title="{i18n>rating}"
+                        text="{
+                            path: 'Rating',
+                            formatter: '.formatter.formatRating'
+                        }"
+                    />
+                </attributes>
+
+                <!--
+                [INTERMEDIATE] THE <firstStatus> AGGREGATION
+                ====================================================
+                ObjectListItem has two status slots: firstStatus and
+                secondStatus. These render as colored ObjectStatus
+                controls aligned to the right of the item.
+
+                We use firstStatus to show the product's availability
+                (In Stock / Low Stock / Out of Stock) with semantic
+                coloring (green / orange / red).
+
+                [BEGINNER] ObjectStatus — Semantic Status Display
+                ====================================================
+                sap.m.ObjectStatus shows a colored text indicator.
+
+                text="{path: 'Stock', formatter: '.formatter.formatAvailability'}"
+                  Converts stock count to readable text:
+                    0  → "Out of Stock"
+                    3  → "Low Stock"
+                    15 → "In Stock"
+
+                state="{path: 'Stock', formatter: '.formatter.formatAvailabilityState'}"
+                  Controls the COLOR of the text:
+                    0  → ValueState.Error   (red)
+                    3  → ValueState.Warning (orange)
+                    15 → ValueState.Success (green)
+
+                [BEST PRACTICE] Notice the PAIRED FORMATTERS pattern:
+                  - formatAvailability  → provides the TEXT
+                  - formatAvailabilityState → provides the COLOR
+
+                Both read from the same model property (Stock) but
+                output different types of values. This pattern keeps
+                text and color synchronized automatically.
+
+                [ADVANCED] ACCESSIBILITY NOTE
+                Screen readers announce the state along with the text:
+                  "In Stock, Success" or "Out of Stock, Error"
+                This gives visually impaired users the same semantic
+                information that sighted users get from color.
+                -->
+                <firstStatus>
+                    <ObjectStatus
+                        text="{
+                            path: 'Stock',
+                            formatter: '.formatter.formatAvailability'
+                        }"
+                        state="{
+                            path: 'Stock',
+                            formatter: '.formatter.formatAvailabilityState'
+                        }"
+                    />
+                </firstStatus>
+            </ObjectListItem>
+        </List>
+
+    </Page>
+
+</mvc:View>
